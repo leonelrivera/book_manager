@@ -1,0 +1,3 @@
+# Requisitos del proyecto Book Manager - Sprint 1
+# El proyecto utiliza las bibliotecas estándar de Python (typing, abc, datetime, csv, os, sys)
+# Compatibilidad: Python >= 3.9
