@@ -1,0 +1,11 @@
+id,id_libro,cantidad,ubicacion
+1,1,18,Deposito Central - Sector A
+2,2,8,Deposito Central
+3,3,12,Sucursal Florida
+4,4,20,Deposito Central
+5,5,4,Sucursal Florida
+6,6,18,Deposito Central
+7,7,3,Sucursal Santa Fe
+8,8,25,Deposito Central
+9,9,7,Sucursal Florida
+10,10,5,Sucursal Santa Fe

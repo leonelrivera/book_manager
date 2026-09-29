@@ -1,0 +1,12 @@
+id,isbn,titulo,autor,id_genero,id_editorial,anio_publicacion,paginas
+1,978-950-07-0000-0,Rayuela (Edición 60 Aniversario),Julio Cortazar,1,1,2023,640
+2,978-950-04-0000-1,Ficciones,Jorge Luis Borges,2,2,1944,220
+3,978-987-11-0000-2,El Aleph,Jorge Luis Borges,2,1,1949,210
+4,978-950-51-0000-3,Cien Anos de Soledad,Gabriel Garcia Marquez,1,1,1967,480
+5,978-987-73-0000-4,Sapiens De animales a dioses,Yuval Noah Harari,5,3,2014,496
+6,978-987-67-0000-5,El Eternauta,Hector German Oesterheld,4,2,1957,360
+7,978-843-39-0000-6,1984,George Orwell,4,6,1949,350
+8,978-950-12-0000-7,Habitos Atomicos,James Clear,7,9,2018,320
+9,978-950-03-0000-8,Martin Fierro,Jose Hernandez,9,10,1872,190
+10,978-987-84-0000-9,Python para Ciencia de Datos,Guido van Rossum,10,10,2022,450
+11,978-950-12-9999-9,Fundamentos de Python,Guido van Rossum,10,10,2026,350

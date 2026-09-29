@@ -1,0 +1,12 @@
+id,nombre,descripcion
+1,Oficial,Cotizacion oficial del Banco Central
+2,Blue,Cotizacion informal del mercado libre
+3,MEP,Dolar Mercado Electronico de Pagos (Bolsa)
+4,CCL,Contado con Liquidacion
+5,Tarjeta,Dolar aplicable a consumos con tarjeta en el exterior
+6,Mayorista,Dolar para operaciones comerciales mayoristas
+7,Cripto,Cotizacion basada en monedas estables (USDT/USDC)
+8,Solidario,Dolar con recargo impositivo
+9,Ahorro,Dolar para atesoramiento de personas fisicas
+10,Futuro,Cotizacion en mercados a termino Rofex
+11,Dolar MEP Inverso,MEP calculado en tiempo real
