@@ -1,3 +1,6 @@
+[Punto 7]
+* Creación e implementación del punto de entrada principal `main.py`.
+
 [Punto 6]
 * Implementación de la interfaz de usuario en consola (`src/book_manager/ui/console.py`) con la clase `ConsolaUI`.
 * Métodos formateados para operaciones CRUD de cada entidad (Libro, Género, Editorial, Moneda, Tipo de Cotización, Precios, Stock y Cotizaciones de Dólar).
