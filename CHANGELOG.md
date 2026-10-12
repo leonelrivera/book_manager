@@ -1,3 +1,10 @@
+[Ejercicio 4]
+* Definición de los modelos relacionales ORM en `src/book_manager/models/models.py` utilizando `DeclarativeBase` de SQLAlchemy 2.0.
+* Mapeo de tablas: `generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `precios`, `stock` y `cotizaciones`.
+* Configuración de claves primarias autoincrementales, restricciones de unicidad e integridad referencial (`ForeignKey` con cascada controlada).
+* Implementación de relaciones bidireccionales con `relationship()`, permitiendo navegación orientada a objetos pura (`libro.genero`, `libro.editorial`, `precio.moneda`, `stock.libro`).
+* Creación física y verificación de esquemas relacionales en la base de datos PostgreSQL de Supabase.
+
 [Ejercicio 3]
 * Implementación de gestores de contexto (Context Managers) para transacciones atómicas con la base de datos en `src/book_manager/database/connection.py`.
 * Creación de la clase `TransaccionContextManager` con protocolo estándar `__enter__` y `__exit__`, controlando commit automático, rollback ante excepciones y cierre seguro (`close`) de la sesión.
