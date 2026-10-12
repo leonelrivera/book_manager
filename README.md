@@ -1,21 +1,17 @@
-# Book Manager - Sprint 1
+# Book Manager - Sprint 2
 
 ## 📌 Objetivo
-Desarrollar una aplicación de consola (CLI) robusta en Python que permita gestionar el inventario de una librería, cotizar los libros en tiempo real según el valor del dólar y administrar la información del catálogo aplicando conceptos de Programación Orientada a Objetos (POO) y persistencia en archivos.
+El objetivo principal de este sprint es consolidar las bases del manejo de bases de datos relacionales, normalización de datos, conexión segura y carga inicial. Se amplía el alcance de la aplicación migrando la persistencia desde archivos planos (CSV) hacia una base de datos relacional mediante el ORM **SQLAlchemy**, además de incorporar la integración con APIs externas para la consulta y actualización de cotizaciones de divisas en tiempo real.
 
 ---
 
 ## 📖 Introducción y Contexto del Sprint de Trabajo
-Una librería con venta al público necesita modernizar su sistema de gestión de inventario de libros. Debido a la fluctuación en los costos de importación de material bibliográfico, el sistema debe gestionar precios en diferentes monedas y seguir de cerca la cotización del dólar para actualizar sus valores en tiempo real.
+En esta segunda entrega del proyecto integrador, la librería moderniza su arquitectura tecnológica migrando su capa de persistencia de archivos a tablas relacionales gestionadas por un motor de base de datos relacional (PostgreSQL / Supabase / SQLite).
 
-Tomando como dominio de referencia el catálogo del portal comercial de libros **Cúspide** (*www.cuspide.com*), se modelan y gestionan las siguientes entidades del sistema:
-
-* **Libro:** Representa cada título del catálogo (ISBN, título, autor, género, editorial, año, páginas).
-* **Género:** Categoría literaria a la que pertenece un libro (Novela, Cuento, Ensayo, Ciencia Ficción, Historia, etc.).
-* **Editorial:** Proveedor o distribuidora que abastece a la librería (Sudamericana, Planeta, Penguin Random House, etc.).
-* **Moneda:** Divisas en las que se expresan los precios (ARS, USD, EUR, etc.).
-* **TipoCotizacion:** Modalidades de cotización del dólar (Oficial, Blue, MEP, CCL, Tarjeta, etc.).
-* **Precio:** Valor monetario asignado a un libro en una moneda determinada.
-* **Stock:** Cantidad física disponible y ubicación de cada ejemplar.
-* **CotizacionDolar:** Registro histórico y diario de cotizaciones con valores de compra y venta.
+Se abordan las siguientes áreas clave:
+* **Persistencia Relacional con ORM:** Mapeo de entidades a modelos relacionales de SQLAlchemy con claves primarias, foráneas, restricciones de unicidad e integridad referencial.
+* **Gestión Segura de Conexiones:** Centralización de la conexión (`ConexionDB`) y control de transacciones atómicas mediante gestores de contexto (`Context Manager`).
+* **Migración de Datos:** Procedimiento automatizado para transformar los datos precargados en CSV hacia sentencias `.sql` y poblar la base de datos garantizando la integridad de las relaciones.
+* **Integración con Servicios Externos:** Conexión a la API pública de cotizaciones de divisas (`DolarAPI`) utilizando variables de entorno (`.env`) para cotización multimoneda en tiempo real.
+* **Reportes y Operaciones Bimonetarias:** Nuevas funcionalidades de consola para visualizar catálogos bimonetarios y exportación de listas de precios actualizadas.
 

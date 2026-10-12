@@ -9,4 +9,3 @@ id,isbn,titulo,autor,id_genero,id_editorial,anio_publicacion,paginas
 8,978-950-12-0000-7,Habitos Atomicos,James Clear,7,9,2018,320
 9,978-950-03-0000-8,Martin Fierro,Jose Hernandez,9,10,1872,190
 10,978-987-84-0000-9,Python para Ciencia de Datos,Guido van Rossum,10,10,2022,450
-11,978-950-12-9999-9,Fundamentos de Python,Guido van Rossum,10,10,2026,350

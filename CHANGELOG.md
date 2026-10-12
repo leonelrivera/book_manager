@@ -1,3 +1,10 @@
+[Ejercicio 1]
+* Inicialización de la rama de trabajo `Sprint_2` partiendo de `Sprint_1`.
+* Creación y configuración de la nueva estructura de directorios: paquetes `database/`, `models/` y carpeta de migraciones `migrations/sql/`.
+* Creación del archivo de configuración de variables de entorno `.env` con endpoints y cadenas de conexión a base de datos.
+* Actualización de dependencias en `requirements.txt` incorporando `SQLAlchemy`, `python-dotenv`, `requests` y `psycopg2-binary`.
+* Actualización de `README.md` detallando objetivos, alcance y contexto técnico del Sprint 2.
+
 [Punto 7]
 * Creación e implementación del punto de entrada principal `main.py`.
 

@@ -1,3 +1,14 @@
-# Requisitos del proyecto Book Manager - Sprint 1
-# El proyecto utiliza las bibliotecas estándar de Python (typing, abc, datetime, csv, os, sys)
+# Requisitos del proyecto Book Manager - Sprint 2
 # Compatibilidad: Python >= 3.9
+
+# Persistencia y ORM
+SQLAlchemy>=2.0.0
+
+# Variables de entorno
+python-dotenv>=1.0.0
+
+# Cliente HTTP para APIs externas
+requests>=2.31.0
+
+# Driver PostgreSQL para Supabase (opcional para SQLite)
+psycopg2-binary>=2.9.0
