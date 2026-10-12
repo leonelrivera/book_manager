@@ -1,3 +1,9 @@
+[Ejercicio 5]
+* Implementación de la función `migrar_datos(carpeta_csvs, carpeta_sqls)` en `src/book_manager/migrations/migrations.py`.
+* Lectura estructurada de los archivos CSV de Sprint 1 respetando el orden estricto de dependencias e integridad referencial.
+* Generación automatizada de los scripts `.sql` con sentencias `INSERT INTO` en `src/book_manager/migrations/sql/` para cada una de las 8 tablas.
+* Población física exitosa de la base de datos PostgreSQL en Supabase con cláusulas de prevención de duplicados (`ON CONFLICT DO NOTHING`) y actualización de secuencias.
+
 [Ejercicio 4]
 * Definición de los modelos relacionales ORM en `src/book_manager/models/models.py` utilizando `DeclarativeBase` de SQLAlchemy 2.0.
 * Mapeo de tablas: `generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `precios`, `stock` y `cotizaciones`.
