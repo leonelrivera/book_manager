@@ -35,7 +35,7 @@ class GeneroModel(Base):
     Representa las categorías temáticas y literarias a las que pertenecen los libros.
     """
 
-    _tablename_ = "generos"
+    __tablename__ = "generos"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
@@ -49,7 +49,7 @@ class GeneroModel(Base):
         passive_deletes=True,
     )
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"GeneroModel(id={self.id}, nombre='{self.nombre}')"
 
 
@@ -59,7 +59,7 @@ class EditorialModel(Base):
     Representa los sellos editoriales o distribuidores de los libros.
     """
 
-    _tablename_ = "editoriales"
+    __tablename__ = "editoriales"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
@@ -74,7 +74,7 @@ class EditorialModel(Base):
         passive_deletes=True,
     )
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"EditorialModel(id={self.id}, nombre='{self.nombre}', pais='{self.pais}')"
 
 
@@ -84,7 +84,7 @@ class MonedaModel(Base):
     Representa las divisas en las cuales se cotizan o expresan los precios.
     """
 
-    _tablename_ = "monedas"
+    __tablename__ = "monedas"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     codigo: Mapped[str] = mapped_column(String(10), nullable=False, unique=True)
@@ -99,7 +99,7 @@ class MonedaModel(Base):
         passive_deletes=True,
     )
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"MonedaModel(id={self.id}, codigo='{self.codigo}', nombre='{self.nombre}')"
 
 
@@ -109,7 +109,7 @@ class TipoCotizacionModel(Base):
     Representa las modalidades o tipos de cotización del dólar (Oficial, Blue, MEP, etc.).
     """
 
-    _tablename_ = "tipos_cotizacion"
+    __tablename__ = "tipos_cotizacion"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
@@ -123,7 +123,7 @@ class TipoCotizacionModel(Base):
         passive_deletes=True,
     )
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"TipoCotizacionModel(id={self.id}, nombre='{self.nombre}')"
 
 
@@ -134,7 +134,7 @@ class LibroModel(Base):
     con sus relaciones orientadas a objetos (genero y editorial).
     """
 
-    _tablename_ = "libros"
+    __tablename__ = "libros"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     isbn: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
@@ -174,7 +174,7 @@ class LibroModel(Base):
         passive_deletes=True,
     )
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return (
             f"LibroModel(id={self.id}, isbn='{self.isbn}', titulo='{self.titulo}', "
             f"autor='{self.autor}', id_genero={self.id_genero}, id_editorial={self.id_editorial})"
@@ -187,7 +187,7 @@ class PrecioModel(Base):
     Representa el valor monetario de un libro expresado en una moneda determinada.
     """
 
-    _tablename_ = "precios"
+    __tablename__ = "precios"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     valor: Mapped[float] = mapped_column(Float, nullable=False)
@@ -208,7 +208,7 @@ class PrecioModel(Base):
     libro: Mapped["LibroModel"] = relationship("LibroModel", back_populates="precios")
     moneda: Mapped["MonedaModel"] = relationship("MonedaModel", back_populates="precios")
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"PrecioModel(id={self.id}, id_libro={self.id_libro}, id_moneda={self.id_moneda}, valor={self.valor})"
 
 
@@ -218,7 +218,7 @@ class StockModel(Base):
     Representa las existencias físicas y la ubicación de almacenamiento de cada libro.
     """
 
-    _tablename_ = "stock"
+    __tablename__ = "stock"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     cantidad: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -235,7 +235,7 @@ class StockModel(Base):
     # Relación Uno-a-Uno
     libro: Mapped["LibroModel"] = relationship("LibroModel", back_populates="stock")
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return f"StockModel(id={self.id}, id_libro={self.id_libro}, cantidad={self.cantidad}, ubicacion='{self.ubicacion}')"
 
 
@@ -245,7 +245,7 @@ class CotizacionDolarModel(Base):
     Almacena los registros históricos y actuales de cotizaciones de divisas.
     """
 
-    _tablename_ = "cotizaciones"
+    __tablename__ = "cotizaciones"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
@@ -265,7 +265,7 @@ class CotizacionDolarModel(Base):
         back_populates="cotizaciones",
     )
 
-    def _repr_(self) -> str:
+    def __repr__(self) -> str:
         return (
             f"CotizacionDolarModel(id={self.id}, id_tipo={self.id_tipo}, "
             f"fecha='{self.fecha}', compra={self.compra}, venta={self.venta})"
