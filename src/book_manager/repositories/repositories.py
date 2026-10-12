@@ -1,15 +1,18 @@
 """Capa de persistencia y repositorios para el sistema Book Manager.
 
-Define las interfaces abstractas (IRepositorio, IRepositorioStock, IRepositorioCotizacionDolar)
-y las implementaciones concretas para la gestión CRUD con persistencia activa en archivos CSV.
+Implementa los repositorios concretos utilizando SQLAlchemy 2.0 y modelos ORM
+para interactuar con la base de datos relacional (PostgreSQL / Supabase / SQLite),
+manteniendo la interfaz orientada a objetos (IRepositorio) y asegurando integridad
+referencial en operaciones CRUD.
 """
 
 import abc
-import csv
 from datetime import date, datetime
-import os
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import Generic, List, Optional, Type, TypeVar, Union
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
 
+from book_manager.database.connection import ConexionDB, transaccion_db
 from book_manager.entities.entities import (
     CotizacionDolar,
     Editorial,
@@ -21,8 +24,20 @@ from book_manager.entities.entities import (
     Stock,
     TipoCotizacion,
 )
+from book_manager.models.models import (
+    Base,
+    CotizacionDolarModel,
+    EditorialModel,
+    GeneroModel,
+    LibroModel,
+    MonedaModel,
+    PrecioModel,
+    StockModel,
+    TipoCotizacionModel,
+)
 
 T = TypeVar("T", bound=EntidadBase)
+M = TypeVar("M", bound=Base)
 
 
 class IRepositorio(abc.ABC, Generic[T]):
@@ -30,65 +45,27 @@ class IRepositorio(abc.ABC, Generic[T]):
 
     @abc.abstractmethod
     def crear(self, entidad: T) -> T:
-        """Crea una nueva entidad en el repositorio.
-
-        Args:
-            entidad (T): La entidad a crear.
-
-        Returns:
-            T: La entidad creada.
-
-        Raises:
-            ValueError: Si ya existe una entidad con el mismo ID.
-        """
+        """Crea una nueva entidad en la base de datos."""
         pass
 
     @abc.abstractmethod
     def leer_por_id(self, id: int) -> Optional[T]:
-        """Lee una entidad del repositorio por su ID.
-
-        Args:
-            id (int): El ID de la entidad a leer.
-
-        Returns:
-            Optional[T]: La entidad si se encuentra, None en caso contrario.
-        """
+        """Lee una entidad por su ID."""
         pass
 
     @abc.abstractmethod
     def leer_todos(self) -> List[T]:
-        """Lee todas las entidades del repositorio.
-
-        Returns:
-            List[T]: Una lista de todas las entidades.
-        """
+        """Lee todas las entidades de la tabla."""
         pass
 
     @abc.abstractmethod
     def actualizar(self, entidad: T) -> T:
-        """Actualiza una entidad existente en el repositorio.
-
-        Args:
-            entidad (T): La entidad a actualizar (debe tener un ID existente).
-
-        Returns:
-            T: La entidad actualizada.
-
-        Raises:
-            ValueError: Si no se encuentra la entidad para actualizar.
-        """
+        """Actualiza una entidad existente."""
         pass
 
     @abc.abstractmethod
     def eliminar(self, id: int) -> bool:
-        """Elimina una entidad del repositorio por su ID.
-
-        Args:
-            id (int): El ID de la entidad a eliminar.
-
-        Returns:
-            bool: True si la entidad fue eliminada, False si no se encontró.
-        """
+        """Elimina una entidad por su ID respetando restricciones de integridad."""
         pass
 
 
@@ -97,297 +74,413 @@ class IRepositorioStock(abc.ABC):
 
     @abc.abstractmethod
     def crear(self, stock: Stock) -> Stock:
-        """Crea un nuevo registro de stock.
-
-        Args:
-            stock (Stock): El objeto Stock a crear.
-
-        Returns:
-            Stock: El objeto Stock creado.
-
-        Raises:
-            ValueError: Si ya existe un registro de stock para el mismo libro.
-        """
         pass
 
     @abc.abstractmethod
     def leer_por_libro(self, libro_id: int) -> Optional[Stock]:
-        """Lee un registro de stock por ID de libro.
-
-        Args:
-            libro_id (int): El ID del libro asociado al stock.
-
-        Returns:
-            Optional[Stock]: El objeto Stock si se encuentra, None en caso contrario.
-        """
         pass
 
     @abc.abstractmethod
     def actualizar(self, stock: Stock) -> Stock:
-        """Actualiza un registro de stock existente.
-
-        Args:
-            stock (Stock): El objeto Stock a actualizar (debe tener un libro_id existente).
-
-        Returns:
-            Stock: El objeto Stock actualizado.
-
-        Raises:
-            ValueError: Si no se encuentra el stock para actualizar.
-        """
         pass
 
     @abc.abstractmethod
     def eliminar(self, libro_id: int) -> bool:
-        """Elimina un registro de stock por ID de libro.
-
-        Args:
-            libro_id (int): El ID del libro asociado al stock a eliminar.
-
-        Returns:
-            bool: True si el stock fue eliminado, False si no se encontró.
-        """
         pass
 
 
 class IRepositorioCotizacionDolar(abc.ABC):
-    """Interfaz para repositorios del tipo RepositorioCotizacionDolar."""
+    """Interfaz para repositorios del tipo CotizacionDolar."""
 
     @abc.abstractmethod
     def crear(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
-        """Crea una nueva cotización de dólar.
-
-        Args:
-            cotizacion (CotizacionDolar): El objeto CotizacionDolar a crear.
-
-        Returns:
-            CotizacionDolar: El objeto CotizacionDolar creado.
-
-        Raises:
-            ValueError: Si ya existe una cotización para el mismo tipo y fecha.
-        """
         pass
 
     @abc.abstractmethod
     def leer_por_tipo_y_fecha(self, tipo_id: int, fecha: Union[date, str]) -> Optional[CotizacionDolar]:
-        """Lee una cotización de dólar por tipo y fecha.
-
-        Args:
-            tipo_id (int): El ID del tipo de cotización (e.g., 'Oficial', 'Blue').
-            fecha (date | str): La fecha de la cotización.
-
-        Returns:
-            Optional[CotizacionDolar]: La cotización si se encuentra, None en caso contrario.
-        """
         pass
 
     @abc.abstractmethod
     def leer_historico_por_tipo(self, tipo_id: int) -> List[CotizacionDolar]:
-        """Lee el histórico de cotizaciones para un tipo específico.
-
-        Args:
-            tipo_id (int): El ID del tipo de cotización.
-
-        Returns:
-            List[CotizacionDolar]: Una lista de cotizaciones históricas para el tipo dado.
-        """
         pass
 
     @abc.abstractmethod
     def actualizar(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
-        """Actualiza una cotización de dólar existente.
-
-        Args:
-            cotizacion (CotizacionDolar): El objeto CotizacionDolar a actualizar.
-
-        Returns:
-            CotizacionDolar: El objeto CotizacionDolar actualizado.
-        """
         pass
 
     @abc.abstractmethod
     def eliminar(self, tipo_id: int, fecha: Union[date, str]) -> bool:
-        """Elimina una cotización de dólar por tipo y fecha.
-
-        Args:
-            tipo_id (int): El ID del tipo de cotización.
-            fecha (date | str): La fecha de la cotización a eliminar.
-
-        Returns:
-            bool: True si la cotización fue eliminada, False si no se encontró.
-        """
         pass
 
 
-class RepositorioBase(IRepositorio[T]):
-    """Implementación genérica con soporte para almacenamiento en memoria y persistencia activa en CSV."""
+class RepositorioBase(IRepositorio[T], Generic[T, M]):
+    """Implementación base de repositorio conectada a SQLAlchemy con conversión entidad <-> ORM."""
 
-    def __init__(self, archivo_csv: Optional[str] = None) -> None:
-        self._datos: Dict[int, T] = {}
-        self._siguiente_id: int = 1
-        self._archivo_csv: Optional[str] = archivo_csv
+    def __init__(
+        self,
+        modelo_cls: Type[M],
+        conexion: Optional[ConexionDB] = None,
+        archivo_csv: Optional[str] = None,
+    ) -> None:
+        self._modelo_cls = modelo_cls
+        self._conexion = conexion or ConexionDB.get_instancia()
+        self._archivo_csv = archivo_csv
 
     def set_archivo_csv(self, ruta_csv: str) -> None:
-        """Configura el archivo CSV de destino para la persistencia automática."""
+        """Mantiene compatibilidad con la interfaz previa de CSV sin alterar la BD."""
         self._archivo_csv = ruta_csv
 
     def guardar_en_csv(self) -> None:
-        """Escribe el estado actual del repositorio en el archivo CSV."""
-        if not self._archivo_csv:
-            return
+        """Compatibilidad con versiones anteriores."""
+        pass
 
-        os.makedirs(os.path.dirname(os.path.abspath(self._archivo_csv)), exist_ok=True)
-        if not self._datos:
-            # Si el diccionario está vacío, limpiamos el archivo CSV para reflejar que no hay datos.
-            open(self._archivo_csv, mode="w", encoding="utf-8").close()
-            return
+    def _obtener_sesion(self) -> Session:
+        return self._conexion.crear_sesion()
 
-        # Obtener nombres de columnas desde la primera entidad
-        primera_entidad = next(iter(self._datos.values()))
-        columnas = list(primera_entidad.to_dict().keys())
+    def _a_entidad(self, modelo: M) -> T:
+        """Convierte una fila del modelo ORM a una instancia de entidad de dominio."""
+        raise NotImplementedError
 
-        with open(self._archivo_csv, mode="w", newline="", encoding="utf-8") as f:
-            escritor = csv.DictWriter(f, fieldnames=columnas)
-            escritor.writeheader()
-            for entidad in self._datos.values():
-                escritor.writerow(entidad.to_dict())
+    def _a_modelo(self, entidad: T) -> M:
+        """Convierte una entidad de dominio a un objeto ORM mapeado."""
+        raise NotImplementedError
 
     def crear(self, entidad: T) -> T:
-        if entidad.id is not None:
-            if entidad.id in self._datos:
-                raise ValueError(f"Ya existe una entidad con el ID {entidad.id}.")
-            if entidad.id >= self._siguiente_id:
-                self._siguiente_id = entidad.id + 1
-        else:
-            entidad.id = self._siguiente_id
-            self._siguiente_id += 1
-
-        self._datos[entidad.id] = entidad
-        self.guardar_en_csv()
-        return entidad
+        with transaccion_db() as session:
+            modelo = self._a_modelo(entidad)
+            session.add(modelo)
+            session.flush()
+            entidad.id = modelo.id
+            return entidad
 
     def leer_por_id(self, id: int) -> Optional[T]:
-        return self._datos.get(id)
+        with transaccion_db() as session:
+            modelo = session.get(self._modelo_cls, id)
+            if modelo is None:
+                return None
+            return self._a_entidad(modelo)
 
     def leer_todos(self) -> List[T]:
-        return list(self._datos.values())
+        with transaccion_db() as session:
+            stmt = select(self._modelo_cls).order_by(self._modelo_cls.id)
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
 
     def actualizar(self, entidad: T) -> T:
-        if entidad.id is None or entidad.id not in self._datos:
-            raise ValueError(f"No se encuentra la entidad con ID {entidad.id} para actualizar.")
-        self._datos[entidad.id] = entidad
-        self.guardar_en_csv()
-        return entidad
+        if entidad.id is None:
+            raise ValueError("No se puede actualizar una entidad sin ID.")
+        with transaccion_db() as session:
+            modelo = session.get(self._modelo_cls, entidad.id)
+            if modelo is None:
+                raise ValueError(f"No se encuentra la entidad con ID {entidad.id} para actualizar.")
+            nuevo_modelo = self._a_modelo(entidad)
+            for attr in dir(nuevo_modelo):
+                if not attr.startswith("_") and attr not in ("metadata", "registry"):
+                    val = getattr(nuevo_modelo, attr)
+                    if hasattr(modelo, attr) and not callable(val):
+                        setattr(modelo, attr, val)
+            session.flush()
+            return entidad
 
     def eliminar(self, id: int) -> bool:
-        if id in self._datos:
-            del self._datos[id]
-            self.guardar_en_csv()
-            return True
-        return False
+        with transaccion_db() as session:
+            modelo = session.get(self._modelo_cls, id)
+            if modelo is not None:
+                session.delete(modelo)
+                return True
+            return False
 
     def vaciar(self) -> None:
-        """Limpia todos los registros del repositorio."""
-        self._datos.clear()
-        self._siguiente_id = 1
+        """Limpia todos los registros de la tabla en la base de datos."""
+        with transaccion_db() as session:
+            session.execute(delete(self._modelo_cls))
 
 
-class RepositorioLibro(RepositorioBase[Libro]):
-    """Repositorio para la entidad Libro con búsquedas especializadas."""
+class RepositorioGenero(RepositorioBase[Genero, GeneroModel]):
+    """Repositorio para la entidad Genero conectado a la tabla 'generos'."""
 
-    def buscar_por_isbn(self, isbn: str) -> Optional[Libro]:
-        isbn_normalizado = isbn.strip().lower()
-        for libro in self._datos.values():
-            if libro.isbn.strip().lower() == isbn_normalizado:
-                return libro
-        return None
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(GeneroModel, conexion, archivo_csv)
 
-    def buscar_por_titulo(self, termino: str) -> List[Libro]:
-        termino_normalizado = termino.strip().lower()
-        return [
-            libro for libro in self._datos.values()
-            if termino_normalizado in libro.titulo.lower()
-        ]
+    def _a_entidad(self, modelo: GeneroModel) -> Genero:
+        return Genero(id_genero=modelo.id, nombre=modelo.nombre, descripcion=modelo.descripcion or "")
 
-    def buscar_por_autor(self, autor: str) -> List[Libro]:
-        autor_normalizado = autor.strip().lower()
-        return [
-            libro for libro in self._datos.values()
-            if autor_normalizado in libro.autor.lower()
-        ]
-
-    def buscar_por_genero(self, id_genero: int) -> List[Libro]:
-        return [libro for libro in self._datos.values() if libro.id_genero == id_genero]
-
-    def buscar_por_editorial(self, id_editorial: int) -> List[Libro]:
-        return [libro for libro in self._datos.values() if libro.id_editorial == id_editorial]
-
-
-class RepositorioGenero(RepositorioBase[Genero]):
-    """Repositorio para la entidad Genero."""
+    def _a_modelo(self, entidad: Genero) -> GeneroModel:
+        return GeneroModel(id=entidad.id, nombre=entidad.nombre, descripcion=entidad.descripcion)
 
     def buscar_por_nombre(self, nombre: str) -> Optional[Genero]:
-        nombre_normalizado = nombre.strip().lower()
-        for genero in self._datos.values():
-            if genero.nombre.strip().lower() == nombre_normalizado:
-                return genero
-        return None
+        with transaccion_db() as session:
+            stmt = select(GeneroModel).where(GeneroModel.nombre.ilike(nombre.strip()))
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
+
+    def tiene_libros_asociados(self, id_genero: int) -> bool:
+        """Verifica si existen libros vinculados al género antes de eliminar."""
+        with transaccion_db() as session:
+            stmt = select(LibroModel.id).where(LibroModel.id_genero == id_genero).limit(1)
+            return session.scalars(stmt).first() is not None
+
+    def eliminar(self, id: int) -> bool:
+        if self.tiene_libros_asociados(id):
+            raise ValueError(f"No se puede eliminar el género con ID {id} porque tiene libros asociados.")
+        return super().eliminar(id)
 
 
-class RepositorioEditorial(RepositorioBase[Editorial]):
-    """Repositorio para la entidad Editorial."""
+class RepositorioEditorial(RepositorioBase[Editorial, EditorialModel]):
+    """Repositorio para la entidad Editorial conectado a la tabla 'editoriales'."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(EditorialModel, conexion, archivo_csv)
+
+    def _a_entidad(self, modelo: EditorialModel) -> Editorial:
+        return Editorial(
+            id_editorial=modelo.id,
+            nombre=modelo.nombre,
+            pais=modelo.pais or "Argentina",
+            contacto=modelo.contacto or "",
+        )
+
+    def _a_modelo(self, entidad: Editorial) -> EditorialModel:
+        return EditorialModel(
+            id=entidad.id,
+            nombre=entidad.nombre,
+            pais=entidad.pais,
+            contacto=entidad.contacto,
+        )
 
     def buscar_por_nombre(self, nombre: str) -> Optional[Editorial]:
-        nombre_normalizado = nombre.strip().lower()
-        for editorial in self._datos.values():
-            if editorial.nombre.strip().lower() == nombre_normalizado:
-                return editorial
-        return None
+        with transaccion_db() as session:
+            stmt = select(EditorialModel).where(EditorialModel.nombre.ilike(nombre.strip()))
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
+
+    def tiene_libros_asociados(self, id_editorial: int) -> bool:
+        """Verifica si existen libros vinculados a la editorial antes de eliminar."""
+        with transaccion_db() as session:
+            stmt = select(LibroModel.id).where(LibroModel.id_editorial == id_editorial).limit(1)
+            return session.scalars(stmt).first() is not None
+
+    def eliminar(self, id: int) -> bool:
+        if self.tiene_libros_asociados(id):
+            raise ValueError(f"No se puede eliminar la editorial con ID {id} porque tiene libros asociados.")
+        return super().eliminar(id)
 
 
-class RepositorioMoneda(RepositorioBase[Moneda]):
-    """Repositorio para la entidad Moneda."""
+class RepositorioMoneda(RepositorioBase[Moneda, MonedaModel]):
+    """Repositorio para la entidad Moneda conectado a la tabla 'monedas'."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(MonedaModel, conexion, archivo_csv)
+
+    def _a_entidad(self, modelo: MonedaModel) -> Moneda:
+        return Moneda(
+            id_moneda=modelo.id,
+            codigo=modelo.codigo,
+            nombre=modelo.nombre,
+            simbolo=modelo.simbolo or "$",
+        )
+
+    def _a_modelo(self, entidad: Moneda) -> MonedaModel:
+        return MonedaModel(
+            id=entidad.id,
+            codigo=entidad.codigo,
+            nombre=entidad.nombre,
+            simbolo=entidad.simbolo,
+        )
 
     def buscar_por_codigo(self, codigo: str) -> Optional[Moneda]:
-        codigo_normalizado = codigo.strip().upper()
-        for moneda in self._datos.values():
-            if moneda.codigo == codigo_normalizado:
-                return moneda
-        return None
+        with transaccion_db() as session:
+            stmt = select(MonedaModel).where(MonedaModel.codigo.ilike(codigo.strip()))
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
+
+    def tiene_precios_asociados(self, id_moneda: int) -> bool:
+        """Verifica si existen precios expresados en esta moneda antes de eliminar."""
+        with transaccion_db() as session:
+            stmt = select(PrecioModel.id).where(PrecioModel.id_moneda == id_moneda).limit(1)
+            return session.scalars(stmt).first() is not None
+
+    def eliminar(self, id: int) -> bool:
+        if self.tiene_precios_asociados(id):
+            raise ValueError(f"No se puede eliminar la moneda con ID {id} porque existen precios asociados.")
+        return super().eliminar(id)
 
 
-class RepositorioTipoCotizacion(RepositorioBase[TipoCotizacion]):
-    """Repositorio para la entidad TipoCotizacion."""
+class RepositorioTipoCotizacion(RepositorioBase[TipoCotizacion, TipoCotizacionModel]):
+    """Repositorio para la entidad TipoCotizacion conectado a la tabla 'tipos_cotizacion'."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(TipoCotizacionModel, conexion, archivo_csv)
+
+    def _a_entidad(self, modelo: TipoCotizacionModel) -> TipoCotizacion:
+        return TipoCotizacion(id_tipo=modelo.id, nombre=modelo.nombre, descripcion=modelo.descripcion or "")
+
+    def _a_modelo(self, entidad: TipoCotizacion) -> TipoCotizacionModel:
+        return TipoCotizacionModel(id=entidad.id, nombre=entidad.nombre, descripcion=entidad.descripcion)
 
     def buscar_por_nombre(self, nombre: str) -> Optional[TipoCotizacion]:
-        nombre_normalizado = nombre.strip().lower()
-        for tipo in self._datos.values():
-            if tipo.nombre.strip().lower() == nombre_normalizado:
-                return tipo
-        return None
+        with transaccion_db() as session:
+            stmt = select(TipoCotizacionModel).where(TipoCotizacionModel.nombre.ilike(nombre.strip()))
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
+
+    def tiene_cotizaciones_asociadas(self, id_tipo: int) -> bool:
+        """Verifica si existen cotizaciones registradas para este tipo."""
+        with transaccion_db() as session:
+            stmt = select(CotizacionDolarModel.id).where(CotizacionDolarModel.id_tipo == id_tipo).limit(1)
+            return session.scalars(stmt).first() is not None
+
+    def eliminar(self, id: int) -> bool:
+        if self.tiene_cotizaciones_asociadas(id):
+            raise ValueError(f"No se puede eliminar el tipo de cotización con ID {id} porque tiene cotizaciones asociadas.")
+        return super().eliminar(id)
 
 
-class RepositorioPrecio(RepositorioBase[Precio]):
-    """Repositorio para la entidad Precio."""
+class RepositorioLibro(RepositorioBase[Libro, LibroModel]):
+    """Repositorio para la entidad Libro con relaciones cargadas y búsquedas especializadas."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(LibroModel, conexion, archivo_csv)
+
+    def _a_entidad(self, modelo: LibroModel) -> Libro:
+        genero_entidad = Genero(
+            id_genero=modelo.genero.id,
+            nombre=modelo.genero.nombre,
+            descripcion=modelo.genero.descripcion or "",
+        ) if modelo.genero else modelo.id_genero
+
+        editorial_entidad = Editorial(
+            id_editorial=modelo.editorial.id,
+            nombre=modelo.editorial.nombre,
+            pais=modelo.editorial.pais or "Argentina",
+            contacto=modelo.editorial.contacto or "",
+        ) if modelo.editorial else modelo.id_editorial
+
+        return Libro(
+            id_libro=modelo.id,
+            isbn=modelo.isbn,
+            titulo=modelo.titulo,
+            autor=modelo.autor,
+            genero=genero_entidad,
+            editorial=editorial_entidad,
+            anio_publicacion=modelo.anio_publicacion,
+            paginas=modelo.paginas,
+        )
+
+    def _a_modelo(self, entidad: Libro) -> LibroModel:
+        return LibroModel(
+            id=entidad.id,
+            isbn=entidad.isbn,
+            titulo=entidad.titulo,
+            autor=entidad.autor,
+            anio_publicacion=entidad.anio_publicacion,
+            paginas=entidad.paginas,
+            id_genero=entidad.id_genero,
+            id_editorial=entidad.id_editorial,
+        )
+
+    def buscar_por_isbn(self, isbn: str) -> Optional[Libro]:
+        with transaccion_db() as session:
+            stmt = select(LibroModel).where(LibroModel.isbn.ilike(isbn.strip()))
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
+
+    def buscar_por_titulo(self, termino: str) -> List[Libro]:
+        with transaccion_db() as session:
+            stmt = select(LibroModel).where(LibroModel.titulo.ilike(f"%{termino.strip()}%"))
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
+
+    def buscar_por_autor(self, autor: str) -> List[Libro]:
+        with transaccion_db() as session:
+            stmt = select(LibroModel).where(LibroModel.autor.ilike(f"%{autor.strip()}%"))
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
+
+    def buscar_por_genero(self, id_genero: int) -> List[Libro]:
+        with transaccion_db() as session:
+            stmt = select(LibroModel).where(LibroModel.id_genero == id_genero)
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
+
+    def buscar_por_editorial(self, id_editorial: int) -> List[Libro]:
+        with transaccion_db() as session:
+            stmt = select(LibroModel).where(LibroModel.id_editorial == id_editorial)
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
+
+
+class RepositorioPrecio(RepositorioBase[Precio, PrecioModel]):
+    """Repositorio para la entidad Precio conectado a la tabla 'precios'."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(PrecioModel, conexion, archivo_csv)
+
+    def _a_entidad(self, modelo: PrecioModel) -> Precio:
+        return Precio(
+            id_precio=modelo.id,
+            id_libro=modelo.id_libro,
+            id_moneda=modelo.id_moneda,
+            valor=modelo.valor,
+        )
+
+    def _a_modelo(self, entidad: Precio) -> PrecioModel:
+        return PrecioModel(
+            id=entidad.id,
+            id_libro=entidad.id_libro,
+            id_moneda=entidad.id_moneda,
+            valor=entidad.valor,
+        )
 
     def leer_por_libro_y_moneda(self, id_libro: int, id_moneda: int) -> Optional[Precio]:
-        for precio in self._datos.values():
-            if precio.id_libro == id_libro and precio.id_moneda == id_moneda:
-                return precio
-        return None
+        with transaccion_db() as session:
+            stmt = select(PrecioModel).where(
+                PrecioModel.id_libro == id_libro,
+                PrecioModel.id_moneda == id_moneda,
+            )
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
 
     def leer_por_libro(self, id_libro: int) -> List[Precio]:
-        return [p for p in self._datos.values() if p.id_libro == id_libro]
+        with transaccion_db() as session:
+            stmt = select(PrecioModel).where(PrecioModel.id_libro == id_libro)
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
 
     def eliminar_por_libro_y_moneda(self, id_libro: int, id_moneda: int) -> bool:
-        precio = self.leer_por_libro_y_moneda(id_libro, id_moneda)
-        if precio is not None and precio.id is not None:
-            return self.eliminar(precio.id)
-        return False
+        with transaccion_db() as session:
+            stmt = select(PrecioModel).where(
+                PrecioModel.id_libro == id_libro,
+                PrecioModel.id_moneda == id_moneda,
+            )
+            modelo = session.scalars(stmt).first()
+            if modelo is not None:
+                session.delete(modelo)
+                return True
+            return False
 
 
-class RepositorioStock(RepositorioBase[Stock], IRepositorioStock):
-    """Repositorio para la entidad Stock cumpliendo con IRepositorio e IRepositorioStock."""
+class RepositorioStock(RepositorioBase[Stock, StockModel], IRepositorioStock):
+    """Repositorio para la entidad Stock conectado a la tabla 'stock'."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(StockModel, conexion, archivo_csv)
+
+    def _a_entidad(self, modelo: StockModel) -> Stock:
+        return Stock(
+            id_stock=modelo.id,
+            id_libro=modelo.id_libro,
+            cantidad=modelo.cantidad,
+            ubicacion=modelo.ubicacion,
+        )
+
+    def _a_modelo(self, entidad: Stock) -> StockModel:
+        return StockModel(
+            id=entidad.id,
+            id_libro=entidad.id_libro,
+            cantidad=entidad.cantidad,
+            ubicacion=entidad.ubicacion,
+        )
 
     def crear(self, stock: Stock) -> Stock:
         if self.leer_por_libro(stock.id_libro) is not None:
@@ -395,75 +488,111 @@ class RepositorioStock(RepositorioBase[Stock], IRepositorioStock):
         return super().crear(stock)
 
     def leer_por_libro(self, libro_id: int) -> Optional[Stock]:
-        for stock in self._datos.values():
-            if stock.id_libro == libro_id:
-                return stock
-        return None
+        with transaccion_db() as session:
+            stmt = select(StockModel).where(StockModel.id_libro == libro_id)
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
 
     def actualizar(self, stock: Stock) -> Stock:
-        stock_existente = self.leer_por_libro(stock.id_libro)
-        if stock_existente is None:
+        existente = self.leer_por_libro(stock.id_libro)
+        if existente is None:
             raise ValueError(f"No se encuentra el stock para el libro ID {stock.id_libro} para actualizar.")
-        if stock.id is None:
-            stock.id = stock_existente.id
-        self._datos[stock.id] = stock
-        self.guardar_en_csv()
-        return stock
+        stock.id = existente.id
+        return super().actualizar(stock)
 
     def eliminar(self, libro_id: int) -> bool:
-        stock_existente = self.leer_por_libro(libro_id)
-        if stock_existente is not None and stock_existente.id is not None:
-            return super().eliminar(stock_existente.id)
-        return False
+        with transaccion_db() as session:
+            stmt = select(StockModel).where(StockModel.id_libro == libro_id)
+            modelo = session.scalars(stmt).first()
+            if modelo is not None:
+                session.delete(modelo)
+                return True
+            return False
 
 
-class RepositorioCotizacionDolar(RepositorioBase[CotizacionDolar], IRepositorioCotizacionDolar):
-    """Repositorio para la entidad CotizacionDolar cumpliendo con IRepositorio e IRepositorioCotizacionDolar."""
+class RepositorioCotizacionDolar(RepositorioBase[CotizacionDolar, CotizacionDolarModel], IRepositorioCotizacionDolar):
+    """Repositorio para la entidad CotizacionDolar conectado a la tabla 'cotizaciones'."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None, archivo_csv: Optional[str] = None) -> None:
+        super().__init__(CotizacionDolarModel, conexion, archivo_csv)
 
     def _normalizar_fecha(self, fecha: Union[date, str]) -> date:
         if isinstance(fecha, str):
             return datetime.strptime(fecha.strip(), "%Y-%m-%d").date()
         return fecha
 
+    def _a_entidad(self, modelo: CotizacionDolarModel) -> CotizacionDolar:
+        return CotizacionDolar(
+            id_cotizacion=modelo.id,
+            id_tipo=modelo.id_tipo,
+            fecha=modelo.fecha,
+            compra=modelo.compra,
+            venta=modelo.venta,
+        )
+
+    def _a_modelo(self, entidad: CotizacionDolar) -> CotizacionDolarModel:
+        return CotizacionDolarModel(
+            id=entidad.id,
+            id_tipo=entidad.id_tipo,
+            fecha=self._normalizar_fecha(entidad.fecha),
+            compra=entidad.compra,
+            venta=entidad.venta,
+        )
+
     def crear(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
         fecha_norm = self._normalizar_fecha(cotizacion.fecha)
-        if self.leer_por_tipo_y_fecha(cotizacion.id_tipo, fecha_norm) is not None:
-            raise ValueError(
-                f"Ya existe una cotización para el tipo {cotizacion.id_tipo} en la fecha {fecha_norm}."
-            )
+        existente = self.leer_por_tipo_y_fecha(cotizacion.id_tipo, fecha_norm)
+        if existente is not None:
+            # Si ya existe cotización para esa fecha y tipo, actualizamos los valores
+            cotizacion.id = existente.id
+            return self.actualizar(cotizacion)
         return super().crear(cotizacion)
 
     def leer_por_tipo_y_fecha(self, tipo_id: int, fecha: Union[date, str]) -> Optional[CotizacionDolar]:
         fecha_norm = self._normalizar_fecha(fecha)
-        for cot in self._datos.values():
-            if cot.id_tipo == tipo_id and cot.fecha == fecha_norm:
-                return cot
-        return None
+        with transaccion_db() as session:
+            stmt = select(CotizacionDolarModel).where(
+                CotizacionDolarModel.id_tipo == tipo_id,
+                CotizacionDolarModel.fecha == fecha_norm,
+            )
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
 
     def leer_historico_por_tipo(self, tipo_id: int) -> List[CotizacionDolar]:
-        registros = [cot for cot in self._datos.values() if cot.id_tipo == tipo_id]
-        return sorted(registros, key=lambda c: c.fecha)
+        with transaccion_db() as session:
+            stmt = select(CotizacionDolarModel).where(
+                CotizacionDolarModel.id_tipo == tipo_id
+            ).order_by(CotizacionDolarModel.fecha)
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
 
     def leer_ultima_cotizacion(self, tipo_id: int) -> Optional[CotizacionDolar]:
-        historico = self.leer_historico_por_tipo(tipo_id)
-        return historico[-1] if historico else None
+        with transaccion_db() as session:
+            stmt = select(CotizacionDolarModel).where(
+                CotizacionDolarModel.id_tipo == tipo_id
+            ).order_by(CotizacionDolarModel.fecha.desc()).limit(1)
+            modelo = session.scalars(stmt).first()
+            return self._a_entidad(modelo) if modelo else None
 
     def actualizar(self, cotizacion: CotizacionDolar) -> CotizacionDolar:
         fecha_norm = self._normalizar_fecha(cotizacion.fecha)
-        cot_existente = self.leer_por_tipo_y_fecha(cotizacion.id_tipo, fecha_norm)
-        if cot_existente is None:
+        existente = self.leer_por_tipo_y_fecha(cotizacion.id_tipo, fecha_norm)
+        if existente is None:
             raise ValueError(
                 f"No se encuentra la cotización para el tipo {cotizacion.id_tipo} en fecha {fecha_norm} para actualizar."
             )
-        if cotizacion.id is None:
-            cotizacion.id = cot_existente.id
-        self._datos[cotizacion.id] = cotizacion
-        self.guardar_en_csv()
-        return cotizacion
+        cotizacion.id = existente.id
+        return super().actualizar(cotizacion)
 
     def eliminar(self, tipo_id: int, fecha: Union[date, str]) -> bool:
         fecha_norm = self._normalizar_fecha(fecha)
-        cot_existente = self.leer_por_tipo_y_fecha(tipo_id, fecha_norm)
-        if cot_existente is not None and cot_existente.id is not None:
-            return super().eliminar(cot_existente.id)
-        return False
+        with transaccion_db() as session:
+            stmt = select(CotizacionDolarModel).where(
+                CotizacionDolarModel.id_tipo == tipo_id,
+                CotizacionDolarModel.fecha == fecha_norm,
+            )
+            modelo = session.scalars(stmt).first()
+            if modelo is not None:
+                session.delete(modelo)
+                return True
+            return False

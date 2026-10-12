@@ -1,3 +1,10 @@
+[Ejercicio 6]
+* Refactorización integral de la capa de repositorios en `src/book_manager/repositories/repositories.py` para operar sobre la base de datos relacional con SQLAlchemy 2.0.
+* Adaptación de la clase genérica `RepositorioBase[T, M]` con operaciones CRUD transaccionales (`session.get`, `session.add`, `session.delete`, `select`).
+* Conversión transparente bidireccional entre modelos ORM (`models.py`) y entidades de dominio (`entities.py`), preservando la composición y navegación orientada a objetos pura (`libro.genero`, `libro.editorial`).
+* Implementación de validaciones de integridad referencial para prevenir borrados inseguros de géneros, editoriales o monedas con registros dependientes (subsanando la observación de la devolución del TP01).
+* Métodos de búsqueda especializados sobre la base de datos (por ISBN, título, autor, código de moneda, cotizaciones históricas y stock por libro).
+
 [Ejercicio 5]
 * Implementación de la función `migrar_datos(carpeta_csvs, carpeta_sqls)` en `src/book_manager/migrations/migrations.py`.
 * Lectura estructurada de los archivos CSV de Sprint 1 respetando el orden estricto de dependencias e integridad referencial.
