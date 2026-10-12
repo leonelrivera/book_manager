@@ -1,3 +1,9 @@
+[Ejercicio 3]
+* Implementación de gestores de contexto (Context Managers) para transacciones atómicas con la base de datos en `src/book_manager/database/connection.py`.
+* Creación de la clase `TransaccionContextManager` con protocolo estándar `__enter__` y `__exit__`, controlando commit automático, rollback ante excepciones y cierre seguro (`close`) de la sesión.
+* Implementación del método generador `@contextmanager` `obtener_sesion()` en la clase `ConexionDB`.
+* Función de utilidad global `transaccion_db()` para simplificar operaciones transaccionales seguras en repositorios y servicios.
+
 [Ejercicio 2]
 * Implementación de la clase `ConexionDB` en `src/book_manager/database/connection.py` para la gestión centralizada de la base de datos relacional.
 * Integración con SQLAlchemy 2.0 (`create_engine`, `sessionmaker`) y soporte para Supabase (PostgreSQL) con compatibilidad de variables de entorno mediante `python-dotenv`.
