@@ -1,10 +1,12 @@
 """Interfaz de usuario de consola (CLI) para el sistema Book Manager.
 
 Proporciona menús interactivos mediante coincidencia de patrones (match-case),
-visualización en tablas formateadas y operaciones CRUD para cada una de las
-entidades del catálogo y reportes.
+visualización en tablas formateadas, operaciones CRUD para cada entidad del catálogo,
+consulta de cotizaciones por API externa, reportes bimonetarios y exportación a CSV.
 """
 
+import csv
+import os
 from typing import Any, Dict, List, Optional
 
 from book_manager.services.services import BookManagerService
@@ -56,7 +58,7 @@ class ConsolaUI:
         paginas: Optional[int] = None,
     ) -> None:
         try:
-            nuevo = self.bm.libro_service.crear_libro(isbn, titulo, autor, id_genero, id_editorial, anio, paginas)
+            nuevo = self.bm.libro_service.dar_de_alta_libro(isbn, titulo, autor, id_genero, id_editorial, anio, paginas)
             print(f"✅ Libro creado con éxito: ID={nuevo.id} - '{nuevo.titulo}'")
         except Exception as e:
             print(f"❌ Error al crear libro: {e}")
@@ -100,7 +102,8 @@ class ConsolaUI:
         print(f"{'ID':<4} | {'NOMBRE':<25} | {'DESCRIPCIÓN':<35}")
         self.imprimir_separador()
         for g in generos:
-            print(f"{g.id:<4} | {g.nombre:<25} | {g.descripcion[:33]:<35}")
+            desc = g.descripcion[:33] if g.descripcion else "-"
+            print(f"{g.id:<4} | {g.nombre:<25} | {desc:<35}")
 
     def crear_genero(self, nombre: str, descripcion: str = "") -> None:
         try:
@@ -109,9 +112,9 @@ class ConsolaUI:
         except Exception as e:
             print(f"❌ Error al crear género: {e}")
 
-    def actualizar_genero(self, id_genero: int, nombre: str, descripcion: str = "") -> None:
+    def actualizar_genero(self, id_genero: int, nuevo_nombre: str, nueva_descripcion: str = "") -> None:
         try:
-            act = self.bm.genero_service.actualizar_genero(id_genero, nombre, descripcion)
+            act = self.bm.genero_service.actualizar_genero(id_genero, nuevo_nombre, nueva_descripcion)
             print(f"✅ Género actualizado: ID={act.id} - '{act.nombre}'")
         except Exception as e:
             print(f"❌ Error al actualizar género: {e}")
@@ -129,16 +132,17 @@ class ConsolaUI:
     # CRUD: EDITORIAL
     # ---------------------------------------------------------
     def listar_editoriales(self) -> None:
-        self.imprimir_encabezado("EDITORIALES Y DISTRIBUIDORAS")
+        self.imprimir_encabezado("EDITORIALES REGISTRADAS")
         editoriales = self.bm.editorial_service.listar_todas()
         if not editoriales:
             print("No hay editoriales registradas.")
             return
 
-        print(f"{'ID':<4} | {'NOMBRE':<28} | {'PAÍS':<15} | {'CONTACTO':<20}")
+        print(f"{'ID':<4} | {'NOMBRE':<25} | {'PAÍS':<15} | {'CONTACTO':<20}")
         self.imprimir_separador()
         for ed in editoriales:
-            print(f"{ed.id:<4} | {ed.nombre:<28} | {ed.pais:<15} | {ed.contacto[:18]:<20}")
+            contacto = ed.contacto[:18] if ed.contacto else "-"
+            print(f"{ed.id:<4} | {ed.nombre:<25} | {ed.pais:<15} | {contacto:<20}")
 
     def crear_editorial(self, nombre: str, pais: str = "Argentina", contacto: str = "") -> None:
         try:
@@ -147,9 +151,9 @@ class ConsolaUI:
         except Exception as e:
             print(f"❌ Error al crear editorial: {e}")
 
-    def actualizar_editorial(self, id_editorial: int, nombre: str, pais: str = "Argentina", contacto: str = "") -> None:
+    def actualizar_editorial(self, id_editorial: int, nuevo_nombre: str, nuevo_pais: str = "Argentina", nuevo_contacto: str = "") -> None:
         try:
-            act = self.bm.editorial_service.actualizar_editorial(id_editorial, nombre, pais, contacto)
+            act = self.bm.editorial_service.actualizar_editorial(id_editorial, nuevo_nombre, nuevo_pais, nuevo_contacto)
             print(f"✅ Editorial actualizada: ID={act.id} - '{act.nombre}'")
         except Exception as e:
             print(f"❌ Error al actualizar editorial: {e}")
@@ -211,10 +215,10 @@ class ConsolaUI:
             print("No hay tipos de cotización registrados.")
             return
 
-        print(f"{'ID':<4} | {'TIPO':<20} | {'DESCRIPCIÓN':<40}")
+        print(f"{'ID':<4} | {'TIPO':<25} | {'DESCRIPCIÓN':<38}")
         self.imprimir_separador()
         for t in tipos:
-            print(f"{t.id:<4} | {t.nombre:<20} | {t.descripcion[:38]:<40}")
+            print(f"{t.id:<4} | {t.nombre:<25} | {t.descripcion[:36]:<38}")
 
     def crear_tipo_cotizacion(self, nombre: str, descripcion: str = "") -> None:
         try:
@@ -306,7 +310,7 @@ class ConsolaUI:
     # ---------------------------------------------------------
     def listar_stock(self) -> None:
         self.imprimir_encabezado("CONTROL DE STOCK E INVENTARIO")
-        stock_list = self.bm.stock_service.listar_todo()
+        stock_list = self.bm.stock_service.listar_todos()
         if not stock_list:
             print("No hay registros de stock.")
             return
@@ -325,14 +329,14 @@ class ConsolaUI:
 
     def incrementar_stock(self, id_libro: int, cantidad: int) -> None:
         try:
-            s = self.bm.stock_service.incrementar_stock(id_libro, cantidad)
+            s = self.bm.stock_service.agregar_unidades(id_libro, cantidad)
             print(f"✅ Stock incrementado: Libro ID={s.id_libro} -> Total: {s.cantidad} unidades")
         except Exception as e:
             print(f"❌ Error al incrementar stock: {e}")
 
     def decrementar_stock(self, id_libro: int, cantidad: int) -> None:
         try:
-            s = self.bm.stock_service.decrementar_stock(id_libro, cantidad)
+            s = self.bm.stock_service.retirar_unidades(id_libro, cantidad)
             print(f"✅ Stock decrementado: Libro ID={s.id_libro} -> Total: {s.cantidad} unidades")
         except Exception as e:
             print(f"❌ Error al decrementar stock: {e}")
@@ -345,6 +349,91 @@ class ConsolaUI:
                 print(f"⚠️ No se encontró registro de stock para el Libro ID={id_libro}.")
         except Exception as e:
             print(f"❌ Error al eliminar stock: {e}")
+
+    # ---------------------------------------------------------
+    # FUNCIONALIDADES SPRINT 2 (EJERCICIO 08)
+    # ---------------------------------------------------------
+    def obtener_cotizaciones_por_api(self) -> None:
+        """Opción de menú: Obtener las cotizaciones por API."""
+        self.imprimir_encabezado("DESCARGA DE COTIZACIONES EN VIVO (DolarAPI)")
+        print("🌐 Consultando cotizaciones vigentes desde endpoint externo...")
+        nuevas = self.bm.cotizacion_service.obtener_cotizaciones()
+        if not nuevas:
+            print("⚠️ No se pudieron descargar cotizaciones desde la API.")
+            return
+
+        print(f"✅ Se sincronizaron {len(nuevas)} cotizaciones en la base de datos:")
+        print(f"{'TIPO':<25} | {'COMPRA':<12} | {'VENTA':<12} | {'FECHA':<12}")
+        self.imprimir_separador()
+        for cot in nuevas:
+            tipo = self.bm.tipo_cotizacion_service.obtener_por_id(cot.id_tipo)
+            nombre_tipo = tipo.nombre if tipo else f"Tipo #{cot.id_tipo}"
+            print(f"{nombre_tipo:<25} | ${cot.compra:<11.2f} | ${cot.venta:<11.2f} | {str(cot.fecha):<12}")
+
+    def ver_precios_bimonetarios(self, codigo_moneda: str = "USD", tipo_dolar: str = "Blue") -> None:
+        """Opción de menú: Ver la lista de precios bimonetaria de los libros (ARS y moneda seleccionada)."""
+        self.imprimir_encabezado(f"LISTA DE PRECIOS BIMONETARIA (ARS / {codigo_moneda} - Dólar {tipo_dolar})")
+        libros = self.bm.libro_service.listar_todos()
+        if not libros:
+            print("No hay libros registrados.")
+            return
+
+        moneda_ars = self.bm.moneda_service.obtener_por_codigo("ARS")
+        moneda_dest = self.bm.moneda_service.obtener_por_codigo(codigo_moneda)
+        simbolo_dest = moneda_dest.simbolo if moneda_dest else "$"
+
+        print(f"{'ID':<3} | {'TÍTULO':<30} | {'PRECIO (ARS)':<16} | {f'PRECIO ({codigo_moneda})':<16}")
+        self.imprimir_separador(longitud=75)
+
+        for l in libros:
+            p_ars = self.bm.precio_service.obtener_precio_estimado(l.id, "ARS", tipo_dolar=tipo_dolar)
+            p_dest = self.bm.precio_service.obtener_precio_estimado(l.id, codigo_moneda, tipo_dolar=tipo_dolar)
+
+            str_ars = f"${p_ars:,.2f}" if p_ars is not None else "No asignado"
+            str_dest = f"{simbolo_dest}{p_dest:,.2f}" if p_dest is not None else "No asignado"
+            print(f"{l.id:<3} | {l.titulo[:28]:<30} | {str_ars:<16} | {str_dest:<16}")
+
+    def exportar_precios_csv(self, ruta_destino: Optional[str] = None) -> str:
+        """Opción de menú: Exportar los precios a archivo CSV para todos los tipos de monedas."""
+        if not ruta_destino:
+            ruta_destino = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "migrations", "csv", "exportacion_precios.csv")
+            )
+
+        os.makedirs(os.path.dirname(os.path.abspath(ruta_destino)), exist_ok=True)
+        self.imprimir_encabezado("EXPORTACIÓN DE PRECIOS A CSV")
+
+        libros = self.bm.libro_service.listar_todos()
+        tipos_cot = self.bm.tipo_cotizacion_service.listar_todos()
+        nombres_tipos = [t.nombre for t in tipos_cot] if tipos_cot else ["Blue", "Oficial"]
+
+        columnas = ["id_libro", "isbn", "titulo", "precio_ars"] + [f"precio_usd_{t.lower().replace(' ', '_')}" for t in nombres_tipos]
+        filas = []
+
+        for l in libros:
+            p_ars = self.bm.precio_service.obtener_precio_estimado(l.id, "ARS")
+            fila_libro: Dict[str, Any] = {
+                "id_libro": l.id,
+                "isbn": l.isbn,
+                "titulo": l.titulo,
+                "precio_ars": p_ars if p_ars is not None else "",
+            }
+            for t in nombres_tipos:
+                try:
+                    p_usd = self.bm.precio_service.obtener_precio_estimado(l.id, "USD", tipo_dolar=t)
+                except Exception:
+                    p_usd = None
+                fila_libro[f"precio_usd_{t.lower().replace(' ', '_')}"] = p_usd if p_usd is not None else ""
+            filas.append(fila_libro)
+
+        with open(ruta_destino, mode="w", newline="", encoding="utf-8") as f:
+            escritor = csv.DictWriter(f, fieldnames=columnas)
+            escritor.writeheader()
+            escritor.writerows(filas)
+
+        print(f"✅ Archivo exportado exitosamente con {len(filas)} libros en:")
+        print(f"   📁 {ruta_destino}")
+        return ruta_destino
 
     # ---------------------------------------------------------
     # REPORTES ANALÍTICOS
@@ -396,12 +485,127 @@ class ConsolaUI:
         self.imprimir_separador()
 
     # ---------------------------------------------------------
+    # DEMOSTRACIÓN COMPLETA PARA CHECKS DE EVALUACIÓN
+    # ---------------------------------------------------------
+    def ejecutar_demostracion_completa(self) -> None:
+        """Ejecuta secuencialmente listado, alta/modificación y reportes para cada modelo."""
+        self.imprimir_encabezado("🚀 EJECUCIÓN DE CHECKS Y VALIDACIONES - SPRINT 2")
+
+        # 1. LIBROS
+        print("\n--- 1. MODELO LIBRO ---")
+        self.listar_libros()
+        print(">> Alta / Modificación de Libro:")
+        lib = self.bm.libro_service.obtener_por_isbn("978-950-12-8888-8")
+        if not lib:
+            self.crear_libro(
+                isbn="978-950-12-8888-8",
+                titulo="Python Avanzado y Arquitectura",
+                autor="Guido van Rossum",
+                id_genero=1,
+                id_editorial=1,
+                anio=2026,
+                paginas=420,
+            )
+        else:
+            self.actualizar_libro(
+                id_libro=lib.id,
+                isbn="978-950-12-8888-8",
+                titulo="Python Avanzado y Arquitectura",
+                autor="Guido van Rossum",
+                id_genero=1,
+                id_editorial=1,
+                anio=2026,
+                paginas=420,
+            )
+
+        # 2. GÉNEROS
+        print("\n--- 2. MODELO GÉNERO ---")
+        self.listar_generos()
+        print(">> Alta / Modificación de Género:")
+        g = self.bm.genero_service.obtener_por_nombre("Inteligencia Artificial")
+        if not g:
+            self.crear_genero("Inteligencia Artificial", "Libros sobre IA, Machine Learning y Data Science")
+        else:
+            self.actualizar_genero(g.id, "Inteligencia Artificial", "Libros sobre IA, Machine Learning y Data Science")
+
+        # 3. EDITORIALES
+        print("\n--- 3. MODELO EDITORIAL ---")
+        self.listar_editoriales()
+        print(">> Alta / Modificación de Editorial:")
+        ed = self.bm.editorial_service.obtener_por_nombre("O'Reilly Media")
+        if not ed:
+            self.crear_editorial("O'Reilly Media", "Estados Unidos", "contacto@oreilly.com")
+        else:
+            self.actualizar_editorial(ed.id, "O'Reilly Media", "Estados Unidos", "contacto@oreilly.com")
+
+        # 4. MONEDAS
+        print("\n--- 4. MODELO MONEDA ---")
+        self.listar_monedas()
+        print(">> Alta / Modificación de Moneda:")
+        m = self.bm.moneda_service.obtener_por_codigo("GBP")
+        if not m:
+            self.crear_moneda("GBP", "Libra Esterlina", "£")
+        else:
+            self.actualizar_moneda(m.id, "GBP", "Libra Esterlina", "£")
+
+        # 5. TIPOS DE COTIZACIÓN
+        print("\n--- 5. MODELO TIPO COTIZACIÓN ---")
+        self.listar_tipos_cotizacion()
+        print(">> Alta / Modificación de Tipo de Cotización:")
+        tc = self.bm.tipo_cotizacion_service.obtener_por_nombre("Blue Inverso")
+        if not tc:
+            self.crear_tipo_cotizacion("Blue Inverso", "Cotización de paridad inversa Blue")
+        else:
+            self.actualizar_tipo_cotizacion(tc.id, "Blue Inverso", "Cotización de paridad inversa Blue")
+
+        # 6. COTIZACIONES
+        print("\n--- 6. MODELO COTIZACIÓN DÓLAR ---")
+        self.listar_cotizaciones()
+        print(">> Alta / Modificación de Cotización:")
+        self.registrar_cotizacion(1, "2026-10-11", 1490.0, 1540.0)
+
+        # 7. PRECIOS
+        print("\n--- 7. MODELO PRECIO ---")
+        self.listar_precios()
+        print(">> Alta / Modificación de Precio:")
+        self.fijar_precio(1, 1, 32000.0)
+
+        # 8. STOCK
+        print("\n--- 8. MODELO STOCK ---")
+        self.listar_stock()
+        print(">> Alta / Modificación de Stock:")
+        stk = self.bm.stock_service.obtener_stock_por_libro(1)
+        if not stk:
+            self.asignar_stock(1, 10, "Depósito Central")
+        else:
+            self.incrementar_stock(1, 5)
+
+        # 9. NUEVAS OPCIONES SPRINT 2 (EJERCICIO 08)
+        print("\n--- 9. NUEVAS FUNCIONALIDADES SOLICITADAS SPRINT 2 ---")
+        print("\n[Acción A: Obtener cotizaciones por API]")
+        self.obtener_cotizaciones_por_api()
+
+        print("\n[Acción B: Ver lista de precios bimonetaria]")
+        self.ver_precios_bimonetarios(codigo_moneda="USD", tipo_dolar="Blue")
+
+        print("\n[Acción C: Exportar precios a archivo CSV]")
+        self.exportar_precios_csv()
+
+        # 10. REPORTES
+        print("\n--- 10. REPORTES ANALÍTICOS ---")
+        self.mostrar_reporte_catalogo(tipo_dolar="Blue")
+        self.mostrar_reporte_valorizacion(tipo_dolar="Blue")
+        self.mostrar_reporte_stock_critico(umbral=5)
+        self.mostrar_reporte_generos()
+        print("\n✅ Demostración y comprobaciones completadas exitosamente.")
+
+    # ---------------------------------------------------------
     # Menú Interactivo de Navegación con Match-Case
     # ---------------------------------------------------------
     def iniciar_menu_interactivo(self) -> None:
         """Menú principal interactivo de consola utilizando coincidencia de patrones (match-case)."""
         while True:
-            self.imprimir_encabezado("BOOK MANAGER - MENÚ PRINCIPAL (SPRINT 1)")
+            self.imprimir_encabezado("BOOK MANAGER - MENÚ PRINCIPAL (SPRINT 2)")
             print("1. 📚 Catálogo y Gestión de Libros")
             print("2. 🏷️  Géneros Literarios")
             print("3. 🏢 Editoriales y Distribuidoras")
@@ -409,7 +613,11 @@ class ConsolaUI:
             print("5. 📈 Tipos y Cotizaciones del Dólar")
             print("6. 💰 Lista de Precios")
             print("7. 📦 Control de Stock e Inventario")
-            print("8. 📊 Menú de Reportes Analíticos")
+            print("8. 🌐 Obtener Cotizaciones por API (DolarAPI)")
+            print("9. 💱 Ver Lista de Precios Bimonetaria (ARS / USD)")
+            print("10. 💾 Exportar Lista de Precios a CSV")
+            print("11. 📊 Menú de Reportes Analíticos")
+            print("12. 🚀 Ejecutar Demostración Completa (Auto-Check)")
             print("0. 🚪 Salir del Sistema")
             self.imprimir_separador()
 
@@ -431,7 +639,17 @@ class ConsolaUI:
                 case "7":
                     self._menu_stock()
                 case "8":
+                    self.obtener_cotizaciones_por_api()
+                case "9":
+                    moneda = input("Código de moneda secundaria [ej. USD] (def: USD): ").strip().upper() or "USD"
+                    dolar = input("Tipo de dólar [Blue/Oficial/MEP] (def: Blue): ").strip() or "Blue"
+                    self.ver_precios_bimonetarios(codigo_moneda=moneda, tipo_dolar=dolar)
+                case "10":
+                    self.exportar_precios_csv()
+                case "11":
                     self._menu_reportes()
+                case "12":
+                    self.ejecutar_demostracion_completa()
                 case "0" | "salir" | "exit" | "q":
                     print("\n👋 ¡Gracias por utilizar Book Manager! Hasta luego.\n")
                     break
@@ -448,7 +666,6 @@ class ConsolaUI:
             print("0. Volver al menú principal")
             self.imprimir_separador()
             op = input("Seleccione una acción: ").strip()
-
             match op:
                 case "1":
                     self.listar_libros()
@@ -587,6 +804,7 @@ class ConsolaUI:
             print("5. Listar histórico de cotizaciones")
             print("6. Registrar nueva cotización diaria")
             print("7. Eliminar cotización (por Tipo y Fecha)")
+            print("8. Actualizar cotizaciones desde API (DolarAPI)")
             print("0. Volver al menú principal")
             self.imprimir_separador()
             op = input("Seleccione una acción: ").strip()
@@ -617,6 +835,8 @@ class ConsolaUI:
                     tipo_id = int(input("ID Tipo de cotización: ").strip())
                     fecha = input("Fecha de cotización a eliminar (YYYY-MM-DD): ").strip()
                     self.eliminar_cotizacion(tipo_id, fecha)
+                case "8":
+                    self.obtener_cotizaciones_por_api()
                 case "0":
                     break
                 case _:
@@ -628,6 +848,8 @@ class ConsolaUI:
             print("1. Listar precios")
             print("2. Fijar / Actualizar precio de libro")
             print("3. Eliminar precio")
+            print("4. Ver lista bimonetaria de precios")
+            print("5. Exportar precios a CSV")
             print("0. Volver al menú principal")
             self.imprimir_separador()
             op = input("Seleccione una acción: ").strip()
@@ -643,6 +865,10 @@ class ConsolaUI:
                     id_l = int(input("ID Libro: ").strip())
                     id_m = int(input("ID Moneda: ").strip())
                     self.eliminar_precio(id_l, id_m)
+                case "4":
+                    self.ver_precios_bimonetarios()
+                case "5":
+                    self.exportar_precios_csv()
                 case "0":
                     break
                 case _:
@@ -690,6 +916,7 @@ class ConsolaUI:
             print("2. 💵 Reporte: Valorización Global del Inventario")
             print("3. ⚠️  Reporte: Alertas de Stock Crítico")
             print("4. 📊 Reporte: Distribución de Títulos por Género")
+            print("5. 💱 Reporte: Lista de Precios Bimonetaria")
             print("0. Volver al menú principal")
             self.imprimir_separador()
             op = input("Seleccione un reporte: ").strip()
@@ -706,6 +933,8 @@ class ConsolaUI:
                     self.mostrar_reporte_stock_critico(umbral=umbral)
                 case "4":
                     self.mostrar_reporte_generos()
+                case "5":
+                    self.ver_precios_bimonetarios()
                 case "0":
                     break
                 case _:

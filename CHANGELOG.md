@@ -1,3 +1,11 @@
+[Ejercicio 8]
+* Incorporación de las nuevas opciones del menú de consola en `src/book_manager/ui/console.py`:
+  - Opción para descarga y sincronización de cotizaciones en tiempo real mediante DolarAPI (`obtener_cotizaciones_por_api()`).
+  - Opción para visualización de la lista de precios bimonetaria de los libros (ARS y moneda seleccionada según cotización vigente, por defecto Dólar Blue: `ver_precios_bimonetarios()`).
+  - Opción para exportación integral de la lista de precios a archivo CSV multi-cotización (`exportar_precios_csv()` hacia `migrations/csv/exportacion_precios.csv`).
+* Adaptación del menú interactivo por consola mediante coincidencia de patrones (`match-case`), incluyendo submenús dedicados y opción de auto-demostración (`ejecutar_demostracion_completa()`).
+* Actualización de `main.py` para soportar ejecución desatendida/automatizada (Google Colab / "Ejecutar todo") y corrección de la observación del TP01 (evitando imprimir "Cargando datos base..." si `import_default_data=False`).
+
 [Ejercicio 7]
 * Implementación de la función `obtener_cotizaciones()` en `CotizacionService` (alias `ServicioCotizacionDolar`) dentro de `src/book_manager/services/services.py`.
 * Integración con la API externa `DolarAPI` (`https://dolarapi.com/v1/dolares`) configurada de forma segura mediante la variable de entorno `API_URL` en `.env`.
