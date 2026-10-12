@@ -1,3 +1,9 @@
+[Ejercicio 7]
+* Implementación de la función `obtener_cotizaciones()` en `CotizacionService` (alias `ServicioCotizacionDolar`) dentro de `src/book_manager/services/services.py`.
+* Integración con la API externa `DolarAPI` (`https://dolarapi.com/v1/dolares`) configurada de forma segura mediante la variable de entorno `API_URL` en `.env`.
+* Descarga, normalización y persistencia en tiempo real de cotizaciones para todas las casas de cambio (Oficial, Blue, Bolsa, Contado con liquidación, Mayorista, Cripto, Tarjeta) en la base de datos de Supabase.
+* Refactorización de `BookManagerService` incorporando Inyección de Dependencias modular (permitiendo inicializar repositorios de forma independiente, subsanando la observación del TP01).
+
 [Ejercicio 6]
 * Refactorización integral de la capa de repositorios en `src/book_manager/repositories/repositories.py` para operar sobre la base de datos relacional con SQLAlchemy 2.0.
 * Adaptación de la clase genérica `RepositorioBase[T, M]` con operaciones CRUD transaccionales (`session.get`, `session.add`, `session.delete`, `select`).
