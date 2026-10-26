@@ -1,3 +1,13 @@
+[Ejercicio 5]
+* Implementación de la generación de reportes analíticos de precios en formato Excel (`.xlsx`) mediante la librería `openpyxl`:
+  - Método `generar_reporte_excel()` en `ComparadorPreciosService` y su delegación en `ReporteService.generar_reporte_excel_precios()` dentro de `src/book_manager/services/services.py`.
+  - Inclusión estricta de los campos requeridos por la consigna: `Libro`, `Precio interno`, `Precio web`, `Diferencia` y `Fecha de extracción`.
+  - Almacenamiento predeterminado en el directorio de salida del proyecto: `src/book_manager/reportes/reporte_precios.xlsx`.
+* Integración en la interfaz de consola `ConsolaUI` (`src/book_manager/ui/console.py`):
+  - Nuevo método `generar_reporte_excel_precios()` con notificación de estado, detalle de campos e instrucciones de apertura/descarga.
+  - Adición de la opción "7. 📑 Generar Reporte de Precios en Excel (.xlsx con openpyxl)" en el Menú de Reportes Analíticos.
+  - Inclusión del reporte en la suite de comprobaciones automatizadas `ejecutar_demostracion_completa()` para su validación en entornos desatendidos (Google Colab).
+
 [Ejercicio 4]
 * Implementación del servicio de comparación de precios y generación de alertas de mercado (`ComparadorPreciosService`) en `src/book_manager/services/services.py`:
   - Comparación sistemática entre el precio interno del catálogo (en Pesos Argentinos - ARS) y el precio extraído desde la web del competidor (Cúspide Libros).
