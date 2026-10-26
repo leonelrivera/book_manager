@@ -436,6 +436,94 @@ class ConsolaUI:
         return ruta_destino
 
     # ---------------------------------------------------------
+    # SPRINT 3: SCRAPING Y ALERTAS DE PRECIOS
+    # ---------------------------------------------------------
+    def ejecutar_scraping_y_alertas(
+        self,
+        umbral_diferencia: Optional[float] = None,
+        libros: Optional[List[str]] = None,
+        ruta_csv: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Solicita el umbral de diferencia, ejecuta el scraper de Cúspide y genera alertas en CSV.
+
+        Args:
+            umbral_diferencia: Diferencia mínima requerida para activar alerta. Si es None, se solicita al usuario.
+            libros: Lista opcional de títulos a buscar. Si es None, se usan los libros del catálogo interno.
+            ruta_csv: Ruta opcional de destino para el archivo CSV.
+
+        Returns:
+            Dict[str, Any]: Resumen con items scrapeados, alertas y ruta del CSV.
+        """
+        self.imprimir_encabezado("SCRAPING WEB Y ALERTAS DE PRECIOS (CÚSPIDE)")
+
+        if umbral_diferencia is None:
+            try:
+                entrada = input("Ingrese la diferencia mínima de precios para generar alertas [$] (ej. 500.0, def: 0.0): ").strip()
+                umbral_diferencia = float(entrada) if entrada else 0.0
+            except (EOFError, KeyboardInterrupt):
+                umbral_diferencia = 0.0
+            except ValueError:
+                print("⚠️ Valor inválido. Se utilizará umbral por defecto: $0.00")
+                umbral_diferencia = 0.0
+
+        resultado = self.bm.comparador_service.ejecutar_scraping_y_alertas(
+            umbral_diferencia=umbral_diferencia,
+            libros=libros,
+            ruta_csv=ruta_csv,
+        )
+
+        alertas = resultado.get("alertas", [])
+        self.imprimir_encabezado(f"COMPARATIVA DE PRECIOS (Umbral Alerta: ${umbral_diferencia:,.2f})")
+        if not alertas:
+            print("No se obtuvieron registros del scraping para comparar.")
+            return resultado
+
+        print(f"{'TÍTULO INTERNO':<22} | {'PRECIO INT':<11} | {'PRECIO WEB':<11} | {'DIFERENCIA':<12} | {'% DIF':<8} | {'ALERTA'}")
+        self.imprimir_separador(longitud=85)
+        for a in alertas:
+            t_int = (a.get("titulo_interno") or "Desconocido")[:20]
+            p_int = f"${a['precio_interno']:,.2f}" if a.get("precio_interno") is not None else "N/D"
+            p_web = f"${a['precio_web']:,.2f}" if a.get("precio_web") is not None else "N/D"
+            dif = f"${a['diferencia']:+,.2f}" if a.get("precio_interno") is not None and a.get("precio_web") is not None else "-"
+            dif_pct = f"{a['diferencia_porcentual']:+.1f}%" if a.get("precio_interno") is not None and a.get("precio_web") is not None else "-"
+
+            alerta_str = f"🔔 {a['tipo_alerta']}" if a.get("alerta_activa") else f"✅ {a['tipo_alerta']}"
+            print(f"{t_int:<22} | {p_int:<11} | {p_web:<11} | {dif:<12} | {dif_pct:<8} | {alerta_str}")
+
+        self.imprimir_separador(longitud=85)
+        print(f"📦 Total productos analizados: {resultado['total_extraidos']}")
+        print(f"⚠️ Alertas activas detectadas:  {resultado['total_alertas']}")
+        print(f"📄 Archivo CSV generado en:    {resultado['archivo_csv']}")
+        print("💡 Puede descargar el archivo CSV para su análisis detallado o importación en hojas de cálculo.")
+        return resultado
+
+    def generar_reporte_excel_precios(self, ruta_excel: Optional[str] = None) -> str:
+        """Genera el reporte de precios en formato Excel (.xlsx) utilizando openpyxl.
+
+        Campos generados en el archivo:
+            - Libro: Título de la obra
+            - Precio interno: Precio de venta interno en ARS
+            - Precio web: Precio obtenido desde el competidor (Cúspide Libros)
+            - Diferencia: Discrepancia calculada (Precio web - Precio interno)
+            - Fecha de extracción: Timestamp de captura del dato
+
+        Args:
+            ruta_excel: Ruta opcional de destino para el archivo .xlsx.
+
+        Returns:
+            str: Ruta absoluta al archivo generado.
+        """
+        self.imprimir_encabezado("REPORTE EN EXCEL: PRECIOS Y COMPETENCIA (OPENPYXL)")
+        print("📊 Procesando datos del catálogo interno y extracciones web de Cúspide...")
+        ruta_generada = self.bm.reporte_service.generar_reporte_excel_precios(ruta_excel=ruta_excel)
+        print("✅ Reporte Excel (.xlsx) generado exitosamente:")
+        print(f"   📁 {ruta_generada}")
+        print("💡 Columnas incluidas: [Libro, Precio interno, Precio web, Diferencia, Fecha de extracción]")
+        print("📥 Puede descargar o abrir este archivo en Microsoft Excel, LibreOffice Calc o Google Sheets.")
+        self.imprimir_separador()
+        return ruta_generada
+
+    # ---------------------------------------------------------
     # REPORTES ANALÍTICOS
     # ---------------------------------------------------------
     def mostrar_reporte_catalogo(self, tipo_dolar: str = "Blue") -> None:
@@ -485,11 +573,36 @@ class ConsolaUI:
         self.imprimir_separador()
 
     # ---------------------------------------------------------
+    # AUDITORÍA DEL SISTEMA
+    # ---------------------------------------------------------
+    def listar_auditorias(self, limite: int = 50) -> None:
+        """Muestra en formato tabular las últimas trazas de auditoría registradas."""
+        self.imprimir_encabezado(f"REGISTRO DE AUDITORÍA DEL SISTEMA (ÚLTIMAS {limite} OPERACIONES)")
+        try:
+            registros = self.bm.auditoria_service.listar_todas(limite=limite)
+        except Exception as e:
+            print(f"⚠️ No fue posible consultar los registros de auditoría: {e}")
+            return
+
+        if not registros:
+            print("ℹ️ No se registran eventos de auditoría en la base de datos.")
+            return
+
+        print(f"{'ID':<5} | {'FECHA Y HORA':<19} | {'ACCIÓN':<28} | {'DETALLES'}")
+        self.imprimir_separador(longitud=100)
+        for r in registros:
+            f_str = r.fecha.strftime("%Y-%m-%d %H:%M:%S") if hasattr(r.fecha, "strftime") else str(r.fecha)
+            detalles_visibles = (r.detalles or "")[:45]
+            print(f"{r.id:<5} | {f_str:<19} | {r.accion[:26]:<28} | {detalles_visibles}")
+        self.imprimir_separador(longitud=100)
+        print(f"Total mostrados: {len(registros)} registros.")
+
+    # ---------------------------------------------------------
     # DEMOSTRACIÓN COMPLETA PARA CHECKS DE EVALUACIÓN
     # ---------------------------------------------------------
     def ejecutar_demostracion_completa(self) -> None:
         """Ejecuta secuencialmente listado, alta/modificación y reportes para cada modelo."""
-        self.imprimir_encabezado("🚀 EJECUCIÓN DE CHECKS Y VALIDACIONES - SPRINT 2")
+        self.imprimir_encabezado("🚀 EJECUCIÓN DE CHECKS Y VALIDACIONES - SPRINT 3")
 
         # 1. LIBROS
         print("\n--- 1. MODELO LIBRO ---")
@@ -597,6 +710,21 @@ class ConsolaUI:
         self.mostrar_reporte_valorizacion(tipo_dolar="Blue")
         self.mostrar_reporte_stock_critico(umbral=5)
         self.mostrar_reporte_generos()
+
+        print("\n[Reporte Excel: Precios internos vs web (openpyxl)]")
+        self.generar_reporte_excel_precios()
+
+        # 11. NUEVAS FUNCIONALIDADES SOLICITADAS SPRINT 3 (EJERCICIO 07)
+        print("\n--- 11. NUEVAS FUNCIONALIDADES SOLICITADAS SPRINT 3 (EJERCICIO 07) ---")
+        print("\n[Opción de Menú: Ejecutar scraping]")
+        self.ejecutar_scraping_y_alertas(umbral_diferencia=500.0)
+
+        print("\n[Opción de Menú: Generar reporte]")
+        self.generar_reporte_excel_precios()
+
+        print("\n[Opción de Menú: Ver historial de auditoría]")
+        self.listar_auditorias(limite=10)
+
         print("\n✅ Demostración y comprobaciones completadas exitosamente.")
 
     # ---------------------------------------------------------
@@ -605,7 +733,7 @@ class ConsolaUI:
     def iniciar_menu_interactivo(self) -> None:
         """Menú principal interactivo de consola utilizando coincidencia de patrones (match-case)."""
         while True:
-            self.imprimir_encabezado("BOOK MANAGER - MENÚ PRINCIPAL (SPRINT 2)")
+            self.imprimir_encabezado("BOOK MANAGER - MENÚ PRINCIPAL (SPRINT 3)")
             print("1. 📚 Catálogo y Gestión de Libros")
             print("2. 🏷️  Géneros Literarios")
             print("3. 🏢 Editoriales y Distribuidoras")
@@ -618,12 +746,15 @@ class ConsolaUI:
             print("10. 💾 Exportar Lista de Precios a CSV")
             print("11. 📊 Menú de Reportes Analíticos")
             print("12. 🚀 Ejecutar Demostración Completa (Auto-Check)")
+            print("13. 🕷️ Ejecutar scraping")
+            print("14. 📑 Generar reporte")
+            print("15. 📋 Ver historial de auditoría")
             print("0. 🚪 Salir del Sistema")
             self.imprimir_separador()
 
             opcion = input("Seleccione una opción: ").strip()
 
-            match opcion:
+            match opcion.lower():
                 case "1":
                     self._menu_libros()
                 case "2":
@@ -650,6 +781,14 @@ class ConsolaUI:
                     self._menu_reportes()
                 case "12":
                     self.ejecutar_demostracion_completa()
+                case "13" | "ejecutar scraping" | "scraping":
+                    self.ejecutar_scraping_y_alertas()
+                case "14" | "generar reporte" | "reporte":
+                    self.generar_reporte_excel_precios()
+                case "15" | "ver historial de auditoria" | "ver historial de auditoría" | "auditoria" | "auditoría":
+                    limite_str = input("Cantidad de registros a consultar (def: 50): ").strip()
+                    limite = int(limite_str) if limite_str.isdigit() else 50
+                    self.listar_auditorias(limite=limite)
                 case "0" | "salir" | "exit" | "q":
                     print("\n👋 ¡Gracias por utilizar Book Manager! Hasta luego.\n")
                     break
@@ -917,10 +1056,13 @@ class ConsolaUI:
             print("3. ⚠️  Reporte: Alertas de Stock Crítico")
             print("4. 📊 Reporte: Distribución de Títulos por Género")
             print("5. 💱 Reporte: Lista de Precios Bimonetaria")
+            print("6. 🕷️ Ejecutar scraping (Scraping web Cúspide y alertas CSV)")
+            print("7. 📑 Generar reporte (Reporte de Precios en Excel .xlsx)")
+            print("8. 📋 Ver historial de auditoría (Registro de trazas del sistema)")
             print("0. Volver al menú principal")
             self.imprimir_separador()
             op = input("Seleccione un reporte: ").strip()
-            match op:
+            match op.lower():
                 case "1":
                     tipo = input("Tipo de dólar para cotizar [Blue/Oficial/MEP] (def: Blue): ").strip() or "Blue"
                     self.mostrar_reporte_catalogo(tipo_dolar=tipo)
@@ -935,6 +1077,14 @@ class ConsolaUI:
                     self.mostrar_reporte_generos()
                 case "5":
                     self.ver_precios_bimonetarios()
+                case "6" | "ejecutar scraping" | "scraping":
+                    self.ejecutar_scraping_y_alertas()
+                case "7" | "generar reporte" | "reporte":
+                    self.generar_reporte_excel_precios()
+                case "8" | "ver historial de auditoria" | "ver historial de auditoría" | "auditoria" | "auditoría":
+                    limite_str = input("Cantidad de registros a consultar (def: 50): ").strip()
+                    limite = int(limite_str) if limite_str.isdigit() else 50
+                    self.listar_auditorias(limite=limite)
                 case "0":
                     break
                 case _:
