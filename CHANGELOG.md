@@ -1,3 +1,15 @@
+[Ejercicio 3]
+* Implementación del spider `CuspideSpider` (`src/book_manager/scraper/spiders/cuspide_spider.py`) utilizando el framework Scrapy:
+  - Extracción automatizada desde el catálogo web de Cúspide Libros (WooCommerce) de los campos requeridos: precio actual, URL de la imagen de portada, formas de pago y cuotas, descripción detallada/sinopsis y autor competidor.
+  - Filtrado y acotamiento estricto a los libros existentes en el catálogo propio, inyectando título y autor interno en la metadata de navegación.
+  - Limitación paramétrica de hasta los 10 primeros resultados por cada búsqueda de título.
+* Implementación y refinamiento de procesadores de carga con `LibroCompetidorLoader` (`src/book_manager/scraper/loaders.py`) para limpieza de espacios, normalización numérica de precios decimales, procesamiento de autores y combinación estructurada de descripciones y formas de pago.
+* Implementación de pipelines de procesamiento (`src/book_manager/scraper/pipelines.py`):
+  - `ValidacionLibroPipeline`: Validación semántica de coincidencia de título y autor (descartando con `DropItem` obras que no pertenezcan al autor buscado o títulos ajenos como falsos positivos del buscador web), descarte de registros con precios inválidos o nulos e imputación de valores por defecto coherentes.
+  - `AlmacenamientoItemsPipeline`: Recolección en memoria de los ítems validados durante la sesión de rastreo.
+* Creación del módulo ejecutor `runner.py` (`src/book_manager/scraper/runner.py`) con la función `ejecutar_scraper()`, aislando la ejecución de Twisted en subprocesos para permitir llamadas reiteradas sin errores `ReactorNotRestartable`.
+* Creación de `scrapy.cfg` en la raíz del proyecto para integración con la CLI estándar de Scrapy.
+
 [Ejercicio 2]
 * Implementación de la función `cargar_datos_desde_sql(ruta_origen, conexion)` en `src/book_manager/preload_data/preload_data.py`:
   - Lectura estructurada y ejecución directa de scripts `.sql` respetando el orden estricto de dependencias e integridad referencial (`generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `precios`, `stock` y `cotizaciones`).
