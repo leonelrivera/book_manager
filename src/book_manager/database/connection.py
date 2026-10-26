@@ -87,12 +87,18 @@ class ConexionDB:
         Args:
             database_url: Cadena de conexión opcional. Si no se provee, se obtiene
                 de la variable de entorno DATABASE_URL (.env). Si no existe, se
-                utiliza una base de datos local SQLite como respaldo.
+                emite un aviso informativo y se utiliza una base de datos local
+                SQLite como respaldo.
         """
         load_dotenv()
 
         if database_url is None:
-            database_url = os.getenv("DATABASE_URL", "sqlite:///book_manager.db")
+            env_url = os.getenv("DATABASE_URL")
+            if env_url:
+                database_url = env_url
+            else:
+                print("ℹ️ Aviso: No se encontró la variable DATABASE_URL en el entorno. Utilizando base de datos local SQLite por defecto (sqlite:///book_manager.db)...")
+                database_url = "sqlite:///book_manager.db"
 
         # Corrección de prefijo para compatibilidad con SQLAlchemy 2.0 y psycopg2
         if database_url.startswith("postgres://"):

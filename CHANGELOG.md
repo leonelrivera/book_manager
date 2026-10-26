@@ -1,3 +1,9 @@
+[Correcciones TP02]
+* Incorporación de mensaje explícito por consola en `ConexionDB` (`src/book_manager/database/connection.py`) cuando no se detecta `DATABASE_URL` en el entorno y se recurre a SQLite como fallback.
+* Adición de restricción `UniqueConstraint("id_tipo", "fecha", name="uq_cotizacion_tipo_fecha")` en `CotizacionDolarModel` (`src/book_manager/models/models.py`), preservando la clave primaria autoincremental y garantizando unicidad de cotizaciones por fecha y tipo.
+* Eliminación de URL por defecto hardcodeada en `CotizacionService.obtener_cotizaciones()` (`src/book_manager/services/services.py`), requiriendo estrictamente `API_URL` del archivo `.env`.
+* Manejo y distinción de excepciones de red específicas con `requests` (`Timeout`, `ConnectionError`, `HTTPError`, `RequestException`, `ValueError`).
+
 [Ejercicio 8]
 * Incorporación de las nuevas opciones del menú de consola en `src/book_manager/ui/console.py`:
   - Opción para descarga y sincronización de cotizaciones en tiempo real mediante DolarAPI (`obtener_cotizaciones_por_api()`).

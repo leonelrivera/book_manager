@@ -6,15 +6,17 @@ claves foráneas, restricciones de integridad y relaciones bidireccionales (rela
 para navegación orientada a objetos pura.
 """
 
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 from sqlalchemy import (
     Date,
+    DateTime,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -246,6 +248,9 @@ class CotizacionDolarModel(Base):
     """
 
     __tablename__ = "cotizaciones"
+    __table_args__ = (
+        UniqueConstraint("id_tipo", "fecha", name="uq_cotizacion_tipo_fecha"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False)
@@ -272,5 +277,28 @@ class CotizacionDolarModel(Base):
         )
 
 
+class AuditoriaModel(Base):
+    """Modelo ORM para la tabla 'auditoria'.
+
+    Registra la traza de auditoría de cada operación ejecutada en el sistema.
+    Campos requeridos por la consigna (Ejercicio 06):
+        - acción (accion)
+        - fecha (fecha)
+        - detalles (detalles)
+    """
+
+    __tablename__ = "auditoria"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    accion: Mapped[str] = mapped_column(String(100), nullable=False)
+    fecha: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
+    detalles: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
+
+    def __repr__(self) -> str:
+        resumen = (self.detalles or "")[:30]
+        return f"AuditoriaModel(id={self.id}, accion='{self.accion}', fecha='{self.fecha}', detalles='{resumen}...' )"
+
+
 # Aliases y exportación de modelos
 CotizacionModel = CotizacionDolarModel
+
