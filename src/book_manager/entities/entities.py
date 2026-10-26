@@ -779,5 +779,103 @@ class CotizacionDolar(EntidadBase):
         )
 
 
-# Alias para compatibilidad con la consigna
+class Auditoria(EntidadBase):
+    """Entidad de dominio que representa un registro de auditoría en el sistema.
+
+    Atributos:
+        id: Identificador único del registro de auditoría.
+        accion: Nombre o código descriptivo de la acción auditada.
+        fecha: Fecha y hora en la que se ejecutó la acción.
+        detalles: Descripción detallada o parámetros de la operación.
+    """
+
+    def __init__(
+        self,
+        id_auditoria: Optional[int] = None,
+        accion: str = "",
+        fecha: Optional[Union[datetime, str]] = None,
+        detalles: str = "",
+    ) -> None:
+        super().__init__(id_auditoria)
+        self.accion = accion
+        if fecha is None:
+            self._fecha = datetime.now()
+        elif isinstance(fecha, str):
+            try:
+                self._fecha = datetime.fromisoformat(fecha)
+            except ValueError:
+                self._fecha = datetime.strptime(fecha, "%Y-%m-%d %H:%M:%S")
+        elif isinstance(fecha, datetime):
+            self._fecha = fecha
+        else:
+            self._fecha = datetime.now()
+        self.detalles = detalles
+
+    @property
+    def id_auditoria(self) -> Optional[int]:
+        """Alias para el ID del registro de auditoría."""
+        return self.id
+
+    @id_auditoria.setter
+    def id_auditoria(self, nuevo_id: Optional[int]) -> None:
+        self.id = nuevo_id
+
+    @property
+    def accion(self) -> str:
+        return self._accion
+
+    @accion.setter
+    def accion(self, valor: str) -> None:
+        if not valor or not str(valor).strip():
+            raise ValueError("La acción de auditoría no puede estar vacía.")
+        self._accion = str(valor).strip()
+
+    @property
+    def fecha(self) -> datetime:
+        return self._fecha
+
+    @fecha.setter
+    def fecha(self, valor: Union[datetime, str]) -> None:
+        if isinstance(valor, str):
+            try:
+                self._fecha = datetime.fromisoformat(valor)
+            except ValueError:
+                self._fecha = datetime.strptime(valor, "%Y-%m-%d %H:%M:%S")
+        elif isinstance(valor, datetime):
+            self._fecha = valor
+        else:
+            raise TypeError("La fecha debe ser un objeto datetime o string ISO.")
+
+    @property
+    def detalles(self) -> str:
+        return self._detalles
+
+    @detalles.setter
+    def detalles(self, valor: str) -> None:
+        self._detalles = str(valor) if valor is not None else ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "accion": self.accion,
+            "fecha": self.fecha.strftime("%Y-%m-%d %H:%M:%S"),
+            "detalles": self.detalles,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Auditoria":
+        return cls(
+            id_auditoria=int(data["id"]) if data.get("id") is not None and str(data["id"]).strip() else None,
+            accion=str(data.get("accion", "")),
+            fecha=str(data.get("fecha", "")),
+            detalles=str(data.get("detalles", "")),
+        )
+
+    def __repr__(self) -> str:
+        f_str = self.fecha.strftime("%Y-%m-%d %H:%M:%S")
+        return f"Auditoria(id={self.id}, accion='{self.accion}', fecha='{f_str}', detalles='{self.detalles}')"
+
+
+# Aliases para compatibilidad con la consigna
 Cotizacion = CotizacionDolar
+RegistroAuditoria = Auditoria

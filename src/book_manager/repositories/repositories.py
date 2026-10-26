@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from book_manager.database.connection import ConexionDB, transaccion_db
 from book_manager.entities.entities import (
+    Auditoria,
     CotizacionDolar,
     Editorial,
     EntidadBase,
@@ -25,6 +26,7 @@ from book_manager.entities.entities import (
     TipoCotizacion,
 )
 from book_manager.models.models import (
+    AuditoriaModel,
     Base,
     CotizacionDolarModel,
     EditorialModel,
@@ -596,3 +598,58 @@ class RepositorioCotizacionDolar(RepositorioBase[CotizacionDolar, CotizacionDola
                 session.delete(modelo)
                 return True
             return False
+
+
+class RepositorioAuditoria(RepositorioBase[Auditoria, AuditoriaModel]):
+    """Repositorio para la persistencia y consulta de trazas de auditoría del sistema."""
+
+    def __init__(self, conexion: Optional[ConexionDB] = None) -> None:
+        super().__init__(AuditoriaModel, conexion)
+        # Asegurar creación de la tabla 'auditoria' en la base de datos (PostgreSQL / SQLite)
+        try:
+            Base.metadata.create_all(
+                bind=self._conexion.engine,
+                tables=[AuditoriaModel.__table__],
+                checkfirst=True,
+            )
+        except Exception:
+            pass
+
+    def _a_entidad(self, modelo: AuditoriaModel) -> Auditoria:
+        return Auditoria(
+            id_auditoria=modelo.id,
+            accion=modelo.accion,
+            fecha=modelo.fecha,
+            detalles=modelo.detalles or "",
+        )
+
+    def _a_modelo(self, entidad: Auditoria) -> AuditoriaModel:
+        return AuditoriaModel(
+            id=entidad.id,
+            accion=entidad.accion,
+            fecha=entidad.fecha,
+            detalles=entidad.detalles,
+        )
+
+    def buscar_por_accion(self, accion: str) -> List[Auditoria]:
+        """Recupera registros de auditoría filtrados por tipo de acción."""
+        with transaccion_db() as session:
+            stmt = (
+                select(AuditoriaModel)
+                .where(AuditoriaModel.accion.ilike(f"%{accion}%"))
+                .order_by(AuditoriaModel.fecha.desc())
+            )
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
+
+    def leer_ultimas(self, limite: int = 50) -> List[Auditoria]:
+        """Obtiene las últimas trazas de auditoría registradas cronológicamente."""
+        with transaccion_db() as session:
+            stmt = (
+                select(AuditoriaModel)
+                .order_by(AuditoriaModel.fecha.desc())
+                .limit(limite)
+            )
+            modelos = session.scalars(stmt).all()
+            return [self._a_entidad(m) for m in modelos]
+

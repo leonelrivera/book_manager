@@ -1,3 +1,16 @@
+[Ejercicio 6]
+* Implementación integral del sistema de auditoría transversal y decorador `@auditar` (`src/book_manager/services/services.py`):
+  - Creación del decorador flexible `@auditar` (utilizable como `@auditar` o `@auditar("NOMBRE_ACCION")`), interceptando la ejecución de métodos del sistema y registrando la traza completa de la operación.
+  - Registro de los campos exigidos por la consigna:
+    * `acción`: Identificador textual de la operación ejecutada (en mayúsculas o nombre personalizado).
+    * `fecha`: Marca temporal exacta de ejecución (`datetime.now()`).
+    * `detalles`: Resumen formateado con sanitización de argumentos (excluyendo punteros `self`), resultado o identificador retornado y estado de ejecución (`ÉXITO` o `ERROR` con tipo y mensaje de excepción).
+  - Mecanismo de persistencia resiliente `_persistir_auditoria()`: verificación e inicialización automática de la tabla `auditoria` y aislamiento de excepciones para evitar que fallos transaccionales en la auditoría interrumpan la lógica de negocio principal.
+* Integración en la interfaz de consola `ConsolaUI` (`src/book_manager/ui/console.py`):
+  - Nuevo método `listar_auditorias(limite)` para visualización tabular formateada de eventos de auditoría con columnas `ID`, `FECHA Y HORA`, `ACCIÓN` y `DETALLES`.
+  - Adición de la opción "14. 📋 Registro de Auditorías del Sistema" en el Menú Principal y opción "8. 📋 Registro de Auditorías del Sistema" en el Menú de Reportes Analíticos.
+* Creación del script de migración DDL `src/book_manager/migrations/sql/auditoria.sql` con creación de tabla e índices sobre `fecha` y `accion`.
+
 [Ejercicio 5]
 * Implementación de la generación de reportes analíticos de precios en formato Excel (`.xlsx`) mediante la librería `openpyxl`:
   - Método `generar_reporte_excel()` en `ComparadorPreciosService` y su delegación en `ReporteService.generar_reporte_excel_precios()` dentro de `src/book_manager/services/services.py`.
