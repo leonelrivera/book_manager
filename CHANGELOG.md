@@ -1,3 +1,9 @@
+[Ejercicio 7]
+* Implementación e integración de las opciones de menú solicitadas para el Sprint 3 en la interfaz de consola (`src/book_manager/ui/console.py`):
+  - "Ejecutar scraping": Ejecución del scraper de Cúspide Libros, comparación sistemática de precios con el catálogo propio evaluando el umbral de diferencia configurado por el usuario y persistencia del archivo CSV de alertas en `src/book_manager/reportes/alertas_precios.csv`.
+  - "Generar reporte": Generación del reporte analítico en formato Excel (`.xlsx`) mediante `openpyxl` en `src/book_manager/reportes/reporte_precios.xlsx`, estructurando las columnas requeridas (`Libro`, `Precio interno`, `Precio web`, `Diferencia`, `Fecha de extracción`), estilizado corporativo, formateo monetario y fórmulas de resumen.
+  - "Ver historial de auditoría": Visualización tabular de los eventos de auditoría registrados en la base de datos con columnas `ID`, `FECHA Y HORA`, `ACCIÓN` y `DETALLES`, con opción de límite paramétrico de registros.
+
 [Ejercicio 6]
 * Implementación integral del sistema de auditoría transversal y decorador `@auditar` (`src/book_manager/services/services.py`):
   - Creación del decorador flexible `@auditar` (utilizable como `@auditar` o `@auditar("NOMBRE_ACCION")`), interceptando la ejecución de métodos del sistema y registrando la traza completa de la operación.

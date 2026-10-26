@@ -1,4 +1,4 @@
-"""Punto de entrada principal para el sistema Book Manager (Sprint 2).
+"""Punto de entrada principal para el sistema Book Manager (Sprint 3).
 
 Orquesta la inicialización de los servicios mediante inyección de dependencias,
 la conexión a la base de datos relacional (Supabase PostgreSQL), la migración
@@ -12,6 +12,7 @@ from typing import Optional
 from book_manager.database.connection import ConexionDB
 from book_manager.migrations.migrations import migrar_datos
 from book_manager.repositories.repositories import (
+    RepositorioAuditoria,
     RepositorioCotizacionDolar,
     RepositorioEditorial,
     RepositorioGenero,
@@ -30,7 +31,7 @@ def main(
     ruta_csv: Optional[str] = None,
     modo_interactivo: Optional[bool] = None,
 ) -> BookManagerService:
-    """Función principal de ejecución del sistema Book Manager (Sprint 2).
+    """Función principal de ejecución del sistema Book Manager (Sprint 3).
 
     Args:
         import_default_data (bool): Si es True, ejecuta la migración explícita
@@ -45,7 +46,7 @@ def main(
     Returns:
         BookManagerService: Instancia del servicio central configurado.
     """
-    print("🚀 Inicializando Book Manager - Sprint 2...")
+    print("🚀 Inicializando Book Manager - Sprint 3...")
 
     # 1. Verificación de conectividad a la base de datos relacional
     conexion = ConexionDB.get_instancia()
@@ -64,6 +65,7 @@ def main(
     repo_precio = RepositorioPrecio(conexion)
     repo_stock = RepositorioStock(conexion)
     repo_cotizacion = RepositorioCotizacionDolar(conexion)
+    repo_auditoria = RepositorioAuditoria(conexion)
 
     bm_service = BookManagerService(
         repo_libro=repo_libro,
@@ -74,6 +76,7 @@ def main(
         repo_precio=repo_precio,
         repo_stock=repo_stock,
         repo_cotizacion=repo_cotizacion,
+        repo_auditoria=repo_auditoria,
     )
 
     # 3. Migración de datos: ÚNICAMENTE si import_default_data es True explícitamente
