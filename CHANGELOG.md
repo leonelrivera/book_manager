@@ -1,3 +1,8 @@
+[Ejercicio 2]
+* Implementación de la función `cargar_datos_desde_sql(ruta_origen, conexion)` en `src/book_manager/preload_data/preload_data.py`:
+  - Lectura estructurada y ejecución directa de scripts `.sql` respetando el orden estricto de dependencias e integridad referencial (`generos`, `editoriales`, `monedas`, `tipos_cotizacion`, `libros`, `precios`, `stock` y `cotizaciones`).
+  - Integración del método `cargar_desde_sql()` en la clase `PrecargaDatos` y exportación centralizada en `src/book_manager/preload_data/__init__.py`.
+
 [Ejercicio 1]
 * Inicialización y configuración de la herramienta de versionado en la rama `Sprint_3` partiendo de la rama `Sprint_2`.
 * Configuración de la estructura de directorios establecida para el Sprint 3:
