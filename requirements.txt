@@ -1,4 +1,4 @@
-# Requisitos del proyecto Book Manager - Sprint 2
+# Requisitos del proyecto Book Manager - Sprint 3
 # Compatibilidad: Python >= 3.9
 
 # Persistencia y ORM
@@ -12,3 +12,9 @@ requests>=2.31.0
 
 # Driver PostgreSQL para Supabase (opcional para SQLite)
 psycopg2-binary>=2.9.0
+
+# Web Scraping para obtención de datos de competidores (Cúspide)
+scrapy>=2.11.0
+
+# Generación y manipulación de reportes en formato Excel (.xlsx)
+openpyxl>=3.1.0

@@ -1,3 +1,12 @@
+[Ejercicio 1]
+* Inicialización y configuración de la herramienta de versionado en la rama `Sprint_3` partiendo de la rama `Sprint_2`.
+* Configuración de la estructura de directorios establecida para el Sprint 3:
+  - Creación del paquete `src/book_manager/scraper/` con los componentes arquitectónicos de Scrapy: configuración (`settings.py`), modelo de datos de competidores (`items.py`), cargadores y procesadores de limpieza (`loaders.py`), pipelines de validación (`pipelines.py`) y subpaquete de spiders (`spiders/`).
+  - Creación y seguimiento en Git del directorio `src/book_manager/reportes/` (`.gitkeep`) destinado a la generación de reportes en hojas de cálculo Excel.
+  - Creación del módulo de inicialización de paquete `__init__.py` en `src/book_manager/preload_data/`.
+* Actualización de dependencias del proyecto en `requirements.txt`, incorporando `scrapy` (extracción web automatizada de catálogos de la competencia) y `openpyxl` (generación y formateo de reportes en Excel).
+* Actualización integral del archivo `README.md` detallando objetivos comerciales, alcance e introducción al contexto de trabajo del Sprint 3.
+
 [Correcciones TP02]
 * Incorporación de mensaje explícito por consola en `ConexionDB` (`src/book_manager/database/connection.py`) cuando no se detecta `DATABASE_URL` en el entorno y se recurre a SQLite como fallback.
 * Adición de restricción `UniqueConstraint("id_tipo", "fecha", name="uq_cotizacion_tipo_fecha")` en `CotizacionDolarModel` (`src/book_manager/models/models.py`), preservando la clave primaria autoincremental y garantizando unicidad de cotizaciones por fecha y tipo.
